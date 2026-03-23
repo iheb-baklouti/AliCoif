@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  ADMIN
+  STAFF
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role     @default(CLIENT)
+  /// Siège attribué au membre d’équipe (1–5), uniquement pour STAFF
+  seatNumber   Int?
+  preferences  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reservations          Reservation[] @relation("ClientReservations")
+  staffServing          Reservation[] @relation("StaffServing")
+  completedReservations Reservation[] @relation("CompletedByStaff")
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  description     String?
+  priceCents      Int
+  durationMinutes Int
+  category        String?
+  active          Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  reservations Reservation[]
+}
+
+model Reservation {
+  id          String            @id @default(cuid())
+  userId      String
+  serviceId   String
+  scheduledAt DateTime
+  status      ReservationStatus @default(PENDING)
+  seatNumber  Int?
+  startedAt   DateTime?
+  /// Coiffeur en charge pendant le service
+  staffUserId String?
+  /// Qui a clôturé le service (stats équipe)
+  completedById String?
+  adminNote   String?
+  proposedScheduledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User    @relation("ClientReservations", fields: [userId], references: [id], onDelete: Cascade)
+  service     Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staffUser   User?   @relation("StaffServing", fields: [staffUserId], references: [id], onDelete: SetNull)
+  completedBy User?   @relation("CompletedByStaff", fields: [completedById], references: [id], onDelete: SetNull)
+
+  @@index([scheduledAt])
+  @@index([status])
+  @@index([userId])
+  @@index([staffUserId])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  authorName String
+  text       String
+  rating     Int
+  published  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  kind      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([kind, sortOrder])
+}
