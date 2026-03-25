@@ -6,13 +6,17 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 
 function getSupabaseEnv() {
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY");
+    return null;
   }
   return { supabaseUrl, supabaseKey };
 }
 
 export function updateSupabaseSession(request: NextRequest) {
-  const { supabaseUrl, supabaseKey } = getSupabaseEnv();
+  const env = getSupabaseEnv();
+  if (!env) {
+    return NextResponse.next({ request: { headers: request.headers } });
+  }
+  const { supabaseUrl, supabaseKey } = env;
   let response = NextResponse.next({
     request: { headers: request.headers },
   });

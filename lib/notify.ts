@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { getSiteUrl } from "@/lib/site-url";
 
 function transporter() {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } = process.env;
@@ -31,8 +32,9 @@ export async function notifyAdminNewReservation(opts: {
 }) {
   const adminEmail = process.env.ADMIN_NOTIFY_EMAIL || process.env.SMTP_USER;
   const adminWa = process.env.ADMIN_WHATSAPP_E164?.replace(/\D/g, "");
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const body = `Nouvelle réservation à traiter.\n\nClient : ${opts.clientName}\nService : ${opts.serviceName}\nCréneau : ${opts.when}\nID : ${opts.reservationId}\n\nTableau de bord : ${base}/dashboard/reservations`;
+  const base = getSiteUrl();
+  const dash = `${base}/dashboard?tab=res`;
+  const body = `Nouvelle réservation à traiter.\n\nClient : ${opts.clientName}\nService : ${opts.serviceName}\nCréneau : ${opts.when}\nID : ${opts.reservationId}\n\nTableau de bord : ${dash}`;
   if (adminEmail) {
     await sendMailTo(adminEmail, `[L'Artiste] Nouvelle réservation — action requise`, body);
   } else {
@@ -40,7 +42,7 @@ export async function notifyAdminNewReservation(opts: {
   }
   if (adminWa) {
     const text = encodeURIComponent(
-      `L'Artiste — Nouvelle réservation\n${opts.clientName} — ${opts.serviceName}\n${opts.when}\nVoir : ${base}/dashboard/reservations`,
+      `L'Artiste — Nouvelle réservation\n${opts.clientName} — ${opts.serviceName}\n${opts.when}\nVoir : ${dash}`,
     );
     console.info("[whatsapp admin link]", `https://wa.me/${adminWa}?text=${text}`);
   }

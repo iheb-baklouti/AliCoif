@@ -12,27 +12,32 @@ const FALLBACK_HERO = [
 ];
 
 async function getHomeData() {
-  const [services, reviews, heroMedia] = await Promise.all([
-    prisma.service.findMany({
-      where: { active: true },
-      orderBy: { sortOrder: "asc" },
-      take: 4,
-    }),
-    prisma.review.findMany({
-      where: { published: true },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-    }),
-    prisma.mediaAsset.findMany({
-      where: { kind: "HERO" },
-      orderBy: { sortOrder: "asc" },
-    }),
-  ]);
-  const hero =
-    heroMedia.length > 0
-      ? heroMedia.map((m) => ({ url: m.url, alt: m.alt ?? "L'Artiste" }))
-      : FALLBACK_HERO;
-  return { services, reviews, hero };
+  try {
+    const [services, reviews, heroMedia] = await Promise.all([
+      prisma.service.findMany({
+        where: { active: true },
+        orderBy: { sortOrder: "asc" },
+        take: 4,
+      }),
+      prisma.review.findMany({
+        where: { published: true },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+      }),
+      prisma.mediaAsset.findMany({
+        where: { kind: "HERO" },
+        orderBy: { sortOrder: "asc" },
+      }),
+    ]);
+    const hero =
+      heroMedia.length > 0
+        ? heroMedia.map((m) => ({ url: m.url, alt: m.alt ?? "L'Artiste" }))
+        : FALLBACK_HERO;
+    return { services, reviews, hero };
+  } catch (e) {
+    console.error("[home] Prisma indisponible — affichage dégradé.", e);
+    return { services: [], reviews: [], hero: FALLBACK_HERO };
+  }
 }
 
 export default async function Home() {

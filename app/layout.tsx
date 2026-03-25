@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, Great_Vibes } from "next/font/google";
 import Script from "next/script";
+import { getMetadataBaseUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const display = Great_Vibes({
@@ -17,7 +18,7 @@ const sans = DM_Sans({
 
 export const metadata: Metadata = {
   applicationName: "L'Artiste by Ali Chakroun",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: getMetadataBaseUrl(),
   title: {
     default: "L'Artiste by Ali Chakroun — Salon hommes",
     template: "%s | L'Artiste",

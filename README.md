@@ -14,6 +14,8 @@ npx prisma db seed
 npm run dev
 ```
 
+Si `prisma db seed` echoue avec **P1001**, utilisez le pooler (6543) pour `DATABASE_URL` dans `.env`, ou executez `prisma/seed.sql` dans le **SQL Editor** Supabase (voir `DEPLOY_VERCEL_SUPABASE.md`).
+
 Ouvrir [http://localhost:3000](http://localhost:3000).
 
 Le serveur de développement utilise `node server.mjs` (Next + Socket.IO sur le même port).
@@ -39,8 +41,9 @@ Copier `.env.example` vers `.env` et ajuster :
 - `JWT_SECRET` — chaîne longue et aléatoire.
 - `NEXT_PUBLIC_SITE_URL` — URL publique du site (SEO, sitemap).
 - **E-mail (SMTP)** : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
-- **Notifications admin** : `ADMIN_NOTIFY_EMAIL`, `ADMIN_WHATSAPP_E164` (voir `lib/notify.ts`).
+- **Notifications admin** : `ADMIN_NOTIFY_EMAIL`, `ADMIN_WHATSAPP_E164`.
 - **WhatsApp sortant (optionnel)** : Twilio (`TWILIO_*` dans `.env.example`).
+- **Guide détaillé** : [`SMTP_ET_NOTIFICATIONS.md`](SMTP_ET_NOTIFICATIONS.md) (configuration, Vercel, tests).
 
 ## Fonctionnalités
 
