@@ -31,6 +31,14 @@ type TeamRow = {
   completedTotal: number;
 };
 
+type StaffMember = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  seatNumber: number | null;
+};
+
 function adminStatusLabel(s: string) {
   const m: Record<string, string> = {
     PENDING: "En attente",
@@ -64,6 +72,14 @@ export function DashboardApp() {
   });
   const [clientQuery, setClientQuery] = useState("");
   const [team, setTeam] = useState<TeamRow[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [staffForm, setStaffForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    seatNumber: 1,
+  });
   const [staffDash, setStaffDash] = useState<{
     seat: number;
     waitingConfirmedToday: number;
@@ -141,6 +157,12 @@ export function DashboardApp() {
     setStaffDash(j);
   }, []);
 
+  const loadStaffMembers = useCallback(async () => {
+    const r = await fetch("/api/admin/staff");
+    const j = await r.json();
+    setStaffMembers(j.staff ?? []);
+  }, []);
+
   useEffect(() => {
     loadMe();
   }, [loadMe]);
@@ -171,6 +193,10 @@ export function DashboardApp() {
   useEffect(() => {
     if (role === "ADMIN" && tab === "equipe") loadTeam();
   }, [role, tab, loadTeam]);
+
+  useEffect(() => {
+    if (role === "ADMIN" && tab === "staff") loadStaffMembers();
+  }, [role, tab, loadStaffMembers]);
 
   async function patchReservation(id: string, body: Record<string, unknown>) {
     await fetch(`/api/admin/reservations/${id}`, {
@@ -214,6 +240,69 @@ export function DashboardApp() {
     }
     alert("Paramètres enregistrés.");
     loadSettings();
+  }
+
+  async function createStaff(e: React.FormEvent) {
+    e.preventDefault();
+    const r = await fetch("/api/admin/staff", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(staffForm),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      alert(j.error || "Erreur lors de la création.");
+      return;
+    }
+    setStaffForm({ name: "", email: "", phone: "", password: "", seatNumber: 1 });
+    loadStaffMembers();
+  }
+
+  async function updateStaff(member: StaffMember) {
+    const name = prompt("Nom", member.name);
+    if (name == null) return;
+    const email = prompt("E-mail", member.email);
+    if (email == null) return;
+    const seatRaw = prompt("Siège (1 à 5)", String(member.seatNumber ?? 1));
+    if (seatRaw == null) return;
+    const seatNumber = Number(seatRaw);
+    if (!Number.isInteger(seatNumber) || seatNumber < 1 || seatNumber > 5) {
+      alert("Siège invalide.");
+      return;
+    }
+    const phone = prompt("Téléphone (optionnel)", member.phone ?? "") ?? "";
+    const newPassword = prompt("Nouveau mot de passe (laisser vide pour ne pas changer)", "") ?? "";
+
+    const r = await fetch(`/api/admin/staff/${member.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        email,
+        phone,
+        seatNumber,
+        password: newPassword || undefined,
+      }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      alert(j.error || "Erreur lors de la mise à jour.");
+      return;
+    }
+    loadStaffMembers();
+    loadTeam();
+  }
+
+  async function removeStaff(member: StaffMember) {
+    if (!confirm(`Supprimer ${member.name} ?`)) return;
+    const r = await fetch(`/api/admin/staff/${member.id}`, { method: "DELETE" });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      alert(j.error || "Suppression impossible.");
+      return;
+    }
+    loadStaffMembers();
+    loadTeam();
   }
 
   if (!role) {
@@ -460,6 +549,99 @@ export function DashboardApp() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {tab === "staff" && (
+        <div className="mt-10 space-y-8">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <h2 className="text-lg font-semibold text-white">Ajouter un membre staff</h2>
+            <form onSubmit={createStaff} className="mt-4 grid gap-3 md:grid-cols-2">
+              <input
+                required
+                value={staffForm.name}
+                onChange={(e) => setStaffForm((s) => ({ ...s, name: e.target.value }))}
+                placeholder="Nom complet"
+                className="rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white"
+              />
+              <input
+                required
+                type="email"
+                value={staffForm.email}
+                onChange={(e) => setStaffForm((s) => ({ ...s, email: e.target.value }))}
+                placeholder="E-mail"
+                className="rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white"
+              />
+              <input
+                value={staffForm.phone}
+                onChange={(e) => setStaffForm((s) => ({ ...s, phone: e.target.value }))}
+                placeholder="Téléphone (optionnel)"
+                className="rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white"
+              />
+              <input
+                required
+                type="password"
+                minLength={6}
+                value={staffForm.password}
+                onChange={(e) => setStaffForm((s) => ({ ...s, password: e.target.value }))}
+                placeholder="Mot de passe"
+                className="rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white"
+              />
+              <select
+                value={staffForm.seatNumber}
+                onChange={(e) => setStaffForm((s) => ({ ...s, seatNumber: Number(e.target.value) }))}
+                className="rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white"
+              >
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <option key={n} value={n}>
+                    Siège {n}
+                  </option>
+                ))}
+              </select>
+              <div className="md:col-span-2">
+                <button
+                  type="submit"
+                  className="rounded-full bg-[#c9a227] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[#e4c04a]"
+                >
+                  Ajouter staff
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold text-white">Membres staff</h2>
+            {staffMembers.map((m) => (
+              <div
+                key={m.id}
+                className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:flex-row md:items-center md:justify-between"
+              >
+                <div>
+                  <p className="font-semibold text-white">{m.name}</p>
+                  <p className="text-sm text-white/60">
+                    {m.email} {m.phone ? `• ${m.phone}` : ""} • Siège {m.seatNumber ?? "—"}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateStaff(m)}
+                    className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/85"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeStaff(m)}
+                    className="rounded-full border border-red-400/30 px-3 py-1.5 text-xs text-red-200"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+            {staffMembers.length === 0 && <p className="text-sm text-white/55">Aucun staff pour le moment.</p>}
           </div>
         </div>
       )}

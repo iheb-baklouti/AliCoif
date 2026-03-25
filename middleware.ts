@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { updateSupabaseSession } from "@/utils/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
   const secret = process.env.JWT_SECRET;
@@ -38,7 +39,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return updateSupabaseSession(request);
 }
 
 export const config = {

@@ -11,6 +11,7 @@ const adminLinks: { tab: string; label: string }[] = [
   { tab: "dash", label: "Vue d'ensemble" },
   { tab: "res", label: "Réservations" },
   { tab: "equipe", label: "Équipe & perfs" },
+  { tab: "staff", label: "Gestion staff" },
   { tab: "clients", label: "Clients" },
   { tab: "services", label: "Services" },
   { tab: "settings", label: "Paramètres" },

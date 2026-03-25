@@ -1,13 +1,16 @@
 # L'Artiste by Ali Chakroun — site web
 
-Application **Next.js 16** + **Tailwind CSS 4** + **Prisma** (SQLite en dev) + **Socket.IO** pour le temps réel (sièges / salon).
+Application **Next.js 16** + **Tailwind CSS 4** + **Prisma** (**PostgreSQL**, ex. **Supabase**) + **Socket.IO** pour le temps réel (sièges / salon).
 
 ## Démarrage
+
+Configurer `.env` avec `DATABASE_URL` et `DIRECT_URL` (voir `.env.example` et `DEPLOY_VERCEL_SUPABASE.md`), puis :
 
 ```bash
 cd web
 npm install
-npx prisma migrate dev
+npx prisma migrate deploy
+npx prisma db seed
 npm run dev
 ```
 
@@ -31,7 +34,8 @@ Le serveur de développement utilise `node server.mjs` (Next + Socket.IO sur le 
 
 Copier `.env.example` vers `.env` et ajuster :
 
-- `DATABASE_URL` — en production, préférer **PostgreSQL** ou **MySQL** (changer le `provider` dans `prisma/schema.prisma`).
+- `DATABASE_URL` — connexion Prisma (pooler Supabase en prod, voir guide).
+- `DIRECT_URL` — connexion directe Postgres pour les migrations (`prisma migrate deploy`).
 - `JWT_SECRET` — chaîne longue et aléatoire.
 - `NEXT_PUBLIC_SITE_URL` — URL publique du site (SEO, sitemap).
 - **E-mail (SMTP)** : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
