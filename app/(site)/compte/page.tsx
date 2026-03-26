@@ -34,6 +34,10 @@ export default function ComptePage() {
   const [prefs, setPrefs] = useState("");
   const [list, setList] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [curPwd, setCurPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [savingPwd, setSavingPwd] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState("");
 
   async function load() {
     const me = await fetch("/api/auth/me").then((r) => r.json());
@@ -63,6 +67,26 @@ export default function ComptePage() {
       body: JSON.stringify({ name, phone, preferences: prefs }),
     });
     router.refresh();
+  }
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPwd.length < 6) { setPwdMsg("Le nouveau mot de passe doit avoir au moins 6 caractères."); return; }
+    setSavingPwd(true);
+    setPwdMsg("");
+    const r = await fetch("/api/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passwordChange: { current: curPwd, next: newPwd } }),
+    });
+    setSavingPwd(false);
+    if (r.ok) {
+      setPwdMsg("✓ Mot de passe modifié avec succès.");
+      setCurPwd(""); setNewPwd("");
+    } else {
+      const j = await r.json().catch(() => ({}));
+      setPwdMsg(j.error || "Erreur lors de la modification.");
+    }
   }
 
   async function logout() {
@@ -144,13 +168,51 @@ export default function ComptePage() {
           </div>
           <button
             type="submit"
-            className="rounded-full bg-[#c9a227] px-4 py-2 text-sm font-semibold text-black hover:bg-[#e4c04a]"
+            className="rounded-full bg-[#c9a227] px-4 py-2 text-sm font-semibold text-black hover:bg-[#e4c04a] active:scale-95 transition-all cursor-pointer"
           >
             Enregistrer
           </button>
         </form>
 
-        <SalonSeats />
+        <div className="space-y-6">
+          {/* Password change */}
+          <form onSubmit={changePassword} className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <h2 className="text-lg font-semibold text-white">Changer le mot de passe</h2>
+            {pwdMsg && (
+              <p className={`text-sm ${pwdMsg.startsWith("✓") ? "text-emerald-300" : "text-red-300"}`}>{pwdMsg}</p>
+            )}
+            <div>
+              <label className="text-xs uppercase tracking-wider text-white/50">Mot de passe actuel</label>
+              <input
+                type="password"
+                value={curPwd}
+                onChange={(e) => setCurPwd(e.target.value)}
+                required
+                className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
+              />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wider text-white/50">Nouveau mot de passe</label>
+              <input
+                type="password"
+                value={newPwd}
+                onChange={(e) => setNewPwd(e.target.value)}
+                required
+                minLength={6}
+                className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={savingPwd}
+              className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/5 active:scale-95 transition-all cursor-pointer disabled:opacity-60"
+            >
+              {savingPwd ? "Modification…" : "Modifier le mot de passe"}
+            </button>
+          </form>
+
+          <SalonSeats />
+        </div>
       </div>
 
       <div className="mt-12">
