@@ -1,51 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { io, type Socket } from "socket.io-client";
+import { useEffect, useState, useCallback } from "react";
 import type { SalonSnapshot } from "@/lib/salon";
 
+/**
+ * Hook de suivi du salon — polling uniquement (compatible Vercel serverless).
+ * Le vrai push via Socket.IO nécessite un serveur Node.js persistent qui n'est
+ * pas disponible sur Vercel. On utilise un rafraîchissement auto toutes les 20 s.
+ */
 export function useSalonSocket() {
   const [snapshot, setSnapshot] = useState<SalonSnapshot | null>(null);
-  const [connected, setConnected] = useState(false);
 
-  async function refresh() {
-    const r = await fetch("/api/salon/state");
-    if (r.ok) {
-      const j = (await r.json()) as SalonSnapshot;
-      setSnapshot(j);
+  const refresh = useCallback(async () => {
+    try {
+      const r = await fetch("/api/salon/state");
+      if (r.ok) {
+        const j = (await r.json()) as SalonSnapshot;
+        setSnapshot(j);
+      }
+    } catch {
+      /* silencieux */
     }
-  }
+  }, []);
 
   useEffect(() => {
     void refresh();
-  }, []);
+    const id = window.setInterval(() => void refresh(), 20_000);
+    return () => window.clearInterval(id);
+  }, [refresh]);
 
-  useEffect(() => {
-    let socket: Socket | undefined;
-    const poll = () => {
-      void refresh();
-    };
-    const pollId = window.setInterval(() => {
-      poll();
-    }, 20_000);
-    try {
-      socket = io({
-        path: "/socket.io/",
-        transports: ["websocket", "polling"],
-      });
-      socket.on("connect", () => setConnected(true));
-      socket.on("disconnect", () => setConnected(false));
-      socket.on("salon:update", (payload: SalonSnapshot) => {
-        setSnapshot(payload);
-      });
-    } catch {
-      setConnected(false);
-    }
-    return () => {
-      window.clearInterval(pollId);
-      socket?.disconnect();
-    };
-  }, []);
-
-  return { snapshot, connected, refresh };
+  return { snapshot, connected: true, refresh };
 }

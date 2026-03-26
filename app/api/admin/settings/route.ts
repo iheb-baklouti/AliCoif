@@ -14,22 +14,54 @@ const patchSchema = z.object({
       slotMinutes: z.number().int().min(10).max(120),
     })
     .optional(),
+  phone: z.string().optional(),
+  whatsapp: z.string().optional(),
+  salonAddress: z.string().optional(),
+  adminEmail: z.string().email().optional(),
+  adminPassword: z
+    .object({ current: z.string(), next: z.string().min(6) })
+    .optional(),
 });
 
+async function getSetting(key: string, fallback = "") {
+  const row = await prisma.setting.findUnique({ where: { key } });
+  return row?.value ?? fallback;
+}
+
+async function setSetting(key: string, value: string) {
+  await prisma.setting.upsert({
+    where: { key },
+    create: { key, value },
+    update: { value },
+  });
+}
+
 export async function GET() {
-  const hero = await prisma.setting.findUnique({ where: { key: "hero_video" } });
-  const bh = await prisma.setting.findUnique({ where: { key: "business_hours" } });
+  const [hero, bh, phone, whatsapp, salonAddress, adminEmail] = await Promise.all([
+    getSetting("hero_video"),
+    getSetting("business_hours"),
+    getSetting("phone"),
+    getSetting("whatsapp"),
+    getSetting("salon_address"),
+    getSetting("admin_email"),
+  ]);
+
   let businessHours = defaultHours;
-  if (bh?.value) {
+  if (bh) {
     try {
-      businessHours = { ...defaultHours, ...JSON.parse(bh.value) };
+      businessHours = { ...defaultHours, ...JSON.parse(bh) };
     } catch {
       /* ignore */
     }
   }
+
   return NextResponse.json({
-    heroVideoUrl: hero?.value ?? "",
+    heroVideoUrl: hero,
     businessHours,
+    phone,
+    whatsapp,
+    salonAddress,
+    adminEmail,
   });
 }
 
@@ -42,19 +74,23 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }
 
-  if (parsed.data.heroVideoUrl !== undefined) {
-    await prisma.setting.upsert({
-      where: { key: "hero_video" },
-      create: { key: "hero_video", value: parsed.data.heroVideoUrl },
-      update: { value: parsed.data.heroVideoUrl },
-    });
-  }
-  if (parsed.data.businessHours) {
-    await prisma.setting.upsert({
-      where: { key: "business_hours" },
-      create: { key: "business_hours", value: JSON.stringify(parsed.data.businessHours) },
-      update: { value: JSON.stringify(parsed.data.businessHours) },
-    });
+  const { data } = parsed;
+
+  if (data.heroVideoUrl !== undefined) await setSetting("hero_video", data.heroVideoUrl);
+  if (data.businessHours) await setSetting("business_hours", JSON.stringify(data.businessHours));
+  if (data.phone !== undefined) await setSetting("phone", data.phone);
+  if (data.whatsapp !== undefined) await setSetting("whatsapp", data.whatsapp);
+  if (data.salonAddress !== undefined) await setSetting("salon_address", data.salonAddress);
+  if (data.adminEmail !== undefined) await setSetting("admin_email", data.adminEmail);
+
+  if (data.adminPassword) {
+    const bcrypt = await import("bcryptjs");
+    const user = await prisma.user.findFirst({ where: { role: "ADMIN" } });
+    if (!user) return NextResponse.json({ error: "Admin introuvable" }, { status: 404 });
+    const ok = await bcrypt.compare(data.adminPassword.current, user.passwordHash);
+    if (!ok) return NextResponse.json({ error: "Mot de passe actuel incorrect" }, { status: 400 });
+    const hash = await bcrypt.hash(data.adminPassword.next, 10);
+    await prisma.user.update({ where: { id: user.id }, data: { passwordHash: hash } });
   }
 
   return NextResponse.json({ ok: true });

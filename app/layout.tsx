@@ -20,14 +20,26 @@ export const metadata: Metadata = {
   applicationName: "L'Artiste by Ali Chakroun",
   metadataBase: getMetadataBaseUrl(),
   title: {
-    default: "L'Artiste by Ali Chakroun — Salon hommes",
-    template: "%s | L'Artiste",
+    default: "L'Artiste by Ali Chakroun — Coiffeur & Barbier à Kairouan",
+    template: "%s | L'Artiste Kairouan",
   },
   description:
-    "Salon barbier & coiffure pour hommes à Kairouan : coupes, barbe, forfait mariage. Réservation en ligne.",
+    "Salon de coiffure et barbier pour hommes à Kairouan, Tunisie. Coupes modernes, barbe, forfaits mariage. Réservation en ligne rapide avec suivi en temps réel.",
+  keywords: [
+    "coiffeur kairouan",
+    "barbier kairouan",
+    "salon coiffure tunisie",
+    "coupe hommes kairouan",
+    "barbe kairouan",
+    "ali chakroun coiffeur",
+    "salon homme tunisie",
+    "réservation coiffeur kairouan",
+    "forfait mariage kairouan",
+  ],
   openGraph: {
-    title: "L'Artiste by Ali Chakroun",
-    description: "Salon hommes — réservation et suivi en direct.",
+    title: "L'Artiste by Ali Chakroun — Coiffeur & Barbier à Kairouan",
+    description:
+      "Le salon de coiffure pour hommes à Kairouan, Tunisie. Coupes nettes, barbe, forfaits premium. Réservez en ligne.",
     type: "website",
     locale: "fr_FR",
     siteName: "L'Artiste by Ali Chakroun",
@@ -37,13 +49,55 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "L'Artiste by Ali Chakroun",
-    description: "Salon hommes — réservation et suivi en direct.",
+    title: "L'Artiste by Ali Chakroun — Kairouan",
+    description:
+      "Salon de coiffure & barbier hommes à Kairouan, Tunisie. Réservation en ligne.",
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" },
+    ],
     apple: "/favicon.ico",
   },
+  other: {
+    "geo.region": "TN-41",
+    "geo.placename": "Kairouan",
+    "geo.position": "35.671728;10.096740",
+    ICBM: "35.671728, 10.096740",
+  },
+};
+
+const localBusinessJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "HairSalon",
+  name: "L'Artiste by Ali Chakroun",
+  description:
+    "Salon de coiffure et barbier pour hommes à Kairouan, Tunisie. Coupes modernes, barbe, forfaits mariage. Réservation en ligne.",
+  url: "https://ali-chakroun-coif.vercel.app",
+  telephone: "+21620392769",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Kairouan",
+    addressCountry: "TN",
+  },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 35.671728,
+    longitude: 10.096740,
+  },
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      opens: "09:00",
+      closes: "19:00",
+    },
+  ],
+  currenciesAccepted: "TND",
+  priceRange: "$$",
+  servesCuisine: undefined,
+  image: "https://ali-chakroun-coif.vercel.app/salon-facade.png",
 };
 
 export default function RootLayout({
@@ -71,6 +125,10 @@ export default function RootLayout({
             }
           })();`}
         </Script>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
+        />
       </head>
       <body className="min-h-full antialiased">{children}</body>
     </html>

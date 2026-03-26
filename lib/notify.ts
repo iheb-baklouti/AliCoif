@@ -23,7 +23,39 @@ export async function sendMailTo(to: string, subject: string, text: string) {
   await t.sendMail({ from: FROM, to, subject, text });
 }
 
-/** Nouvelle demande de réservation — notifier l’admin */
+/**
+ * Envoie un message WhatsApp via CallMeBot (gratuit, sans inscription API).
+ * Configurer CALLMEBOT_PHONE (+21620392769) et CALLMEBOT_APIKEY dans l'env.
+ * Pour obtenir la clé : envoyer "I allow callmebot to send me messages" sur
+ * WhatsApp au +34 644 97 73 30.
+ */
+async function sendWhatsApp(phone: string, message: string) {
+  const apiKey = process.env.CALLMEBOT_APIKEY;
+  const botPhone = process.env.CALLMEBOT_PHONE;
+
+  if (!apiKey || !botPhone) {
+    // Fallback: log un lien wa.me cliquable dans les logs Vercel
+    const link = `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(message.slice(0, 200))}`;
+    console.info("[whatsapp link]", link);
+    return;
+  }
+
+  const url = new URL("https://api.callmebot.com/whatsapp.php");
+  url.searchParams.set("phone", botPhone);
+  url.searchParams.set("text", message.slice(0, 400));
+  url.searchParams.set("apikey", apiKey);
+
+  try {
+    const res = await fetch(url.toString(), { method: "GET" });
+    if (!res.ok) {
+      console.warn("[callmebot] Erreur", res.status, await res.text().catch(() => ""));
+    }
+  } catch (err) {
+    console.warn("[callmebot] Échec réseau", err);
+  }
+}
+
+/** Nouvelle demande de réservation — notifier l'admin */
 export async function notifyAdminNewReservation(opts: {
   clientName: string;
   serviceName: string;
@@ -35,21 +67,28 @@ export async function notifyAdminNewReservation(opts: {
   const base = getSiteUrl();
   const dash = `${base}/dashboard?tab=res`;
   const body = `Nouvelle réservation à traiter.\n\nClient : ${opts.clientName}\nService : ${opts.serviceName}\nCréneau : ${opts.when}\nID : ${opts.reservationId}\n\nTableau de bord : ${dash}`;
+
   if (adminEmail) {
     await sendMailTo(adminEmail, `[L'Artiste] Nouvelle réservation — action requise`, body);
   } else {
     console.info("[admin notify email skipped — ADMIN_NOTIFY_EMAIL / SMTP_USER]", body);
   }
+
   if (adminWa) {
-    const text = encodeURIComponent(
+    await sendWhatsApp(
+      adminWa,
       `L'Artiste — Nouvelle réservation\n${opts.clientName} — ${opts.serviceName}\n${opts.when}\nVoir : ${dash}`,
     );
-    console.info("[whatsapp admin link]", `https://wa.me/${adminWa}?text=${text}`);
   }
 }
 
-export async function notifyClientReservationPending(opts: { to: string; name: string; serviceName: string; when: string }) {
-  const text = `Bonjour ${opts.name},\n\nNous avons bien reçu votre demande pour « ${opts.serviceName} » le ${opts.when}.\n\nElle est en attente de validation par le salon. Vous recevrez un message dès qu’elle sera traitée.\n\n— L'Artiste`;
+export async function notifyClientReservationPending(opts: {
+  to: string;
+  name: string;
+  serviceName: string;
+  when: string;
+}) {
+  const text = `Bonjour ${opts.name},\n\nNous avons bien reçu votre demande pour « ${opts.serviceName} » le ${opts.when}.\n\nElle est en attente de validation par le salon. Vous recevrez un message dès qu'elle sera traitée.\n\n— L'Artiste`;
   await sendMailTo(opts.to, `L'Artiste — Demande de réservation reçue`, text);
 }
 
@@ -64,11 +103,7 @@ export async function notifyClientReservationConfirmed(opts: {
   await sendMailTo(opts.to, `L'Artiste — Réservation confirmée`, text);
   const phone = opts.phoneE164?.replace(/\D/g, "");
   if (phone) {
-    const pre = encodeURIComponent(`L'Artiste : votre RDV « ${opts.serviceName} » est confirmé le ${opts.when}.`);
-    console.info("[whatsapp client]", `https://wa.me/${phone}?text=${pre}`);
-    if (process.env.TWILIO_WHATSAPP_FROM) {
-      await sendWhatsAppIfConfigured(phone, text);
-    }
+    await sendWhatsApp(phone, text);
   }
 }
 
@@ -78,11 +113,11 @@ export async function notifyClientReservationRejected(opts: {
   reason?: string | null;
   phoneE164?: string | null;
 }) {
-  const text = `Bonjour ${opts.name},\n\nVotre demande de réservation n’a pas pu être acceptée.${opts.reason ? `\n\nMotif : ${opts.reason}` : ""}\n\nPour un autre créneau, passez par le site ou appelez-nous.\n\n— L'Artiste`;
+  const text = `Bonjour ${opts.name},\n\nVotre demande de réservation n'a pas pu être acceptée.${opts.reason ? `\n\nMotif : ${opts.reason}` : ""}\n\nPour un autre créneau, passez par le site ou appelez-nous.\n\n— L'Artiste`;
   await sendMailTo(opts.to, `L'Artiste — Réservation non disponible`, text);
   const phone = opts.phoneE164?.replace(/\D/g, "");
   if (phone) {
-    console.info("[whatsapp client]", `https://wa.me/${phone}?text=${encodeURIComponent(text.slice(0, 300))}`);
+    await sendWhatsApp(phone, text.slice(0, 300));
   }
 }
 
@@ -97,30 +132,6 @@ export async function notifyClientRescheduled(opts: {
   await sendMailTo(opts.to, `L'Artiste — Nouveau créneau`, text);
   const phone = opts.phoneE164?.replace(/\D/g, "");
   if (phone) {
-    console.info("[whatsapp client]", `https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
+    await sendWhatsApp(phone, text);
   }
-}
-
-async function sendWhatsAppIfConfigured(toPhone: string, body: string) {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_WHATSAPP_FROM;
-  if (!sid || !token || !from) {
-    console.info("[whatsapp client stub]", toPhone, body.slice(0, 120));
-    return;
-  }
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
-  const params = new URLSearchParams({
-    From: from,
-    To: `whatsapp:${toPhone.startsWith("+") ? toPhone : `+${toPhone}`}`,
-    Body: body,
-  });
-  await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: "Basic " + Buffer.from(`${sid}:${token}`).toString("base64"),
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: params.toString(),
-  }).catch(() => console.info("[twilio whatsapp failed]"));
 }
