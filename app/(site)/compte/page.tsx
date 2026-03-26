@@ -38,6 +38,10 @@ export default function ComptePage() {
   const [newPwd, setNewPwd] = useState("");
   const [savingPwd, setSavingPwd] = useState(false);
   const [pwdMsg, setPwdMsg] = useState("");
+  const [reviewText, setReviewText] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewMsg, setReviewMsg] = useState("");
+  const [savingReview, setSavingReview] = useState(false);
 
   async function load() {
     const me = await fetch("/api/auth/me").then((r) => r.json());
@@ -86,6 +90,26 @@ export default function ComptePage() {
     } else {
       const j = await r.json().catch(() => ({}));
       setPwdMsg(j.error || "Erreur lors de la modification.");
+    }
+  }
+
+  async function submitReview(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingReview(true);
+    setReviewMsg("");
+    const r = await fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: reviewText, rating: reviewRating }),
+    });
+    setSavingReview(false);
+    if (r.ok) {
+      setReviewMsg("✓ Merci pour votre avis ! Il sera visible après validation par le salon.");
+      setReviewText("");
+      setReviewRating(5);
+    } else {
+      const j = await r.json().catch(() => ({}));
+      setReviewMsg(j.error || "Erreur lors de l'envoi.");
     }
   }
 
@@ -253,6 +277,43 @@ export default function ComptePage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Leave a review */}
+      <div className="mt-12">
+        <h2 className="text-lg font-semibold text-white">Laisser un avis</h2>
+        <form onSubmit={submitReview} className="mt-4 space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 max-w-lg">
+          {reviewMsg && (
+            <p className={`text-sm ${reviewMsg.startsWith("✓") ? "text-emerald-300" : "text-red-300"}`}>{reviewMsg}</p>
+          )}
+          <div>
+            <label className="text-xs uppercase tracking-wider text-white/50">Note</label>
+            <div className="mt-2 flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} type="button" onClick={() => setReviewRating(n)}
+                  className={`text-2xl transition-all cursor-pointer ${n <= reviewRating ? "text-[#c9a227]" : "text-white/15 hover:text-white/30"}`}>
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wider text-white/50">Votre avis</label>
+            <textarea
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              required
+              minLength={3}
+              rows={3}
+              placeholder="Partagez votre expérience…"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
+            />
+          </div>
+          <button type="submit" disabled={savingReview}
+            className="rounded-full bg-[#c9a227] px-5 py-2 text-sm font-semibold text-black hover:bg-[#e4c04a] active:scale-95 transition-all cursor-pointer disabled:opacity-60">
+            {savingReview ? "Envoi…" : "Envoyer mon avis"}
+          </button>
+        </form>
       </div>
     </div>
   );
