@@ -130,6 +130,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   }
 
   if (nextStatus === "COMPLETED") {
+    // Use the staff member who was serving (staffUserId) for stats attribution
+    const completedBy = existing.staffUserId ?? a.session.sub;
     const updated = await prisma.reservation.update({
       where: { id },
       data: {
@@ -137,7 +139,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
         seatNumber: null,
         startedAt: null,
         staffUserId: null,
-        completedById: a.session.sub,
+        completedById: completedBy,
       },
       include: { user: true, service: true },
     });

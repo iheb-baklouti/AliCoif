@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { showToast } from "@/components/dashboard/Toast";
+import { Skeleton } from "@/components/dashboard/Skeleton";
 
 type Me = { name: string; email: string; phone: string | null; role: string };
 
 export function DashboardCompte() {
   const [me, setMe] = useState<Me | null>(null);
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [prefs, setPrefs] = useState("");
@@ -25,7 +27,8 @@ export function DashboardCompte() {
           setPhone(d.user.phone || "");
           setPrefs(d.user.preferences || "");
         }
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   async function saveProfile(e: React.FormEvent) {
@@ -49,10 +52,11 @@ export function DashboardCompte() {
     e.preventDefault();
     if (newPwd.length < 6) { showToast("error", "Le nouveau mot de passe doit avoir au moins 6 caractères."); return; }
     setSavingPwd(true);
-    const r = await fetch("/api/admin/settings", {
+    // Use /api/me for all roles (works for CLIENT, STAFF, ADMIN)
+    const r = await fetch("/api/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ adminPassword: { current: curPwd, next: newPwd } }),
+      body: JSON.stringify({ passwordChange: { current: curPwd, next: newPwd } }),
     });
     setSavingPwd(false);
     if (r.ok) {
@@ -62,6 +66,26 @@ export function DashboardCompte() {
       const j = await r.json().catch(() => ({}));
       showToast("error", j.error || "Erreur.");
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-10 space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-10 w-48" />
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
+          <Skeleton className="h-5 w-40" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Skeleton className="h-12" />
+            <Skeleton className="h-12" />
+            <Skeleton className="h-12" />
+            <Skeleton className="h-12" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!me) return null;
@@ -79,44 +103,27 @@ export function DashboardCompte() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Nom</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
-            />
+            <input value={name} onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
           <div>
             <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">E-mail</label>
-            <input
-              value={me.email}
-              readOnly
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/50"
-            />
+            <input value={me.email} readOnly
+              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/50" />
           </div>
           <div>
             <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Téléphone</label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+216 XX XXX XXX"
-              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
-            />
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+216 XX XXX XXX"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
           <div>
             <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Préférences</label>
-            <input
-              value={prefs}
-              onChange={(e) => setPrefs(e.target.value)}
-              placeholder="Style, produits, allergies…"
-              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
-            />
+            <input value={prefs} onChange={(e) => setPrefs(e.target.value)} placeholder="Style, produits, allergies…"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
         </div>
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-full bg-[#c9a227] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[#e4c04a] active:scale-95 transition-all cursor-pointer disabled:opacity-60"
-        >
+        <button type="submit" disabled={saving}
+          className="rounded-full bg-[#c9a227] px-5 py-2.5 text-sm font-semibold text-black hover:bg-[#e4c04a] active:scale-95 transition-all cursor-pointer disabled:opacity-60">
           {saving ? "Enregistrement…" : "Enregistrer"}
         </button>
       </form>
@@ -127,31 +134,17 @@ export function DashboardCompte() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Mot de passe actuel</label>
-            <input
-              type="password"
-              value={curPwd}
-              onChange={(e) => setCurPwd(e.target.value)}
-              required
-              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
-            />
+            <input type="password" value={curPwd} onChange={(e) => setCurPwd(e.target.value)} required
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
           <div>
             <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Nouveau mot de passe</label>
-            <input
-              type="password"
-              value={newPwd}
-              onChange={(e) => setNewPwd(e.target.value)}
-              required
-              minLength={6}
-              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
-            />
+            <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} required minLength={6}
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
         </div>
-        <button
-          type="submit"
-          disabled={savingPwd}
-          className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/5 active:scale-95 transition-all cursor-pointer disabled:opacity-60"
-        >
+        <button type="submit" disabled={savingPwd}
+          className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/5 active:scale-95 transition-all cursor-pointer disabled:opacity-60">
           {savingPwd ? "Modification…" : "Modifier le mot de passe"}
         </button>
       </form>

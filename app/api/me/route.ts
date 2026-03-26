@@ -7,6 +7,12 @@ const patchSchema = z.object({
   name: z.string().min(1).optional(),
   phone: z.string().nullable().optional(),
   preferences: z.string().nullable().optional(),
+  passwordChange: z
+    .object({
+      current: z.string(),
+      next: z.string().min(6),
+    })
+    .optional(),
 });
 
 export async function PATCH(req: Request) {
@@ -19,6 +25,18 @@ export async function PATCH(req: Request) {
   }
   const phone =
     parsed.data.phone === undefined ? undefined : parsed.data.phone === "" ? null : parsed.data.phone;
+
+  // Handle password change if requested
+  if (parsed.data.passwordChange) {
+    const bcrypt = await import("bcryptjs");
+    const currentUser = await prisma.user.findUnique({ where: { id: u.session.sub } });
+    if (!currentUser) return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
+    const ok = await bcrypt.compare(parsed.data.passwordChange.current, currentUser.passwordHash);
+    if (!ok) return NextResponse.json({ error: "Mot de passe actuel incorrect" }, { status: 400 });
+    const hash = await bcrypt.hash(parsed.data.passwordChange.next, 10);
+    await prisma.user.update({ where: { id: u.session.sub }, data: { passwordHash: hash } });
+  }
+
   const user = await prisma.user.update({
     where: { id: u.session.sub },
     data: {

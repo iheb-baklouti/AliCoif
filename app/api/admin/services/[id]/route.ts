@@ -30,3 +30,17 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   return NextResponse.json({ service });
 }
+
+export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const a = await requireAdmin();
+  if ("error" in a) return a.error;
+  const { id } = await ctx.params;
+  const hasRes = await prisma.reservation.count({ where: { serviceId: id }, take: 1 });
+  if (hasRes > 0) {
+    // Soft-delete: just deactivate
+    await prisma.service.update({ where: { id }, data: { active: false } });
+    return NextResponse.json({ ok: true, softDeleted: true });
+  }
+  await prisma.service.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}

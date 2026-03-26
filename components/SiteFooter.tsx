@@ -65,7 +65,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-[var(--border-subtle)] py-6 text-center text-xs text-[var(--text-muted)]">
-        © {new Date().getFullYear()} L&apos;Artiste by Ali Chakroun — Kairouan, Tunisie
+        {`© ${new Date().getFullYear()} L'Artiste by Ali Chakroun — Kairouan, Tunisie`}
       </div>
     </footer>
   );

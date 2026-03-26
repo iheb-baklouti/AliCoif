@@ -6,9 +6,11 @@ import { formatDateTimeFr } from "@/lib/format";
 import { useSalonSocket } from "@/hooks/useSalonSocket";
 import { AdminMediaPanel } from "@/components/admin/AdminMediaPanel";
 import { StaffModal, type StaffModalMode, type StaffFormData } from "@/components/dashboard/StaffModal";
+import { ServiceModal, type ServiceModalMode, type ServiceFormData } from "@/components/dashboard/ServiceModal";
 import { showToast } from "@/components/dashboard/Toast";
 import { DashboardCompte } from "@/components/dashboard/DashboardCompte";
 import { ClientHistoryPanel } from "@/components/dashboard/ClientHistoryPanel";
+import { SkeletonKpiGrid, SkeletonRows, SkeletonTable } from "@/components/dashboard/Skeleton";
 
 /* ─── Types ─── */
 type Reservation = {
@@ -27,18 +29,27 @@ type Stats = {
 type TeamRow = { id: string; name: string; email: string; seatNumber: number | null; completedThisMonth: number; completedTotal: number };
 type StaffMember = { id: string; name: string; email: string; phone: string | null; seatNumber: number | null };
 type Client = { id: string; name: string; email: string; phone: string | null };
+type ServiceRow = { id: string; name: string; slug: string; description: string | null; priceCents: number; durationMinutes: number; category: string | null; active: boolean };
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "En attente", CONFIRMED: "Confirmée", REJECTED: "Refusée",
   IN_PROGRESS: "En cours", COMPLETED: "Terminée", CANCELLED: "Annulée",
 };
+const STATUS_DOT: Record<string, string> = {
+  PENDING: "bg-amber-400", CONFIRMED: "bg-blue-400", IN_PROGRESS: "bg-emerald-400",
+  COMPLETED: "bg-green-400", CANCELLED: "bg-white/20", REJECTED: "bg-red-400",
+};
 
-function KpiCard({ label, value, sub, gold }: { label: string; value: string | number; sub?: string; gold?: boolean }) {
+/* ─── Sub-components ─── */
+function KpiCard({ label, value, sub, gold, icon }: { label: string; value: string | number; sub?: string; gold?: boolean; icon?: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-      <p className="text-xs uppercase tracking-wider text-white/40">{label}</p>
-      <p className={`mt-2 text-3xl font-semibold ${gold ? "text-[#c9a227]" : "text-white"}`}>{value}</p>
-      {sub && <p className="mt-1 text-xs text-white/30">{sub}</p>}
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex items-start gap-4">
+      {icon && <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.06]">{icon}</div>}
+      <div>
+        <p className="text-[11px] uppercase tracking-wider text-white/40">{label}</p>
+        <p className={`mt-1 text-2xl font-bold ${gold ? "text-[#c9a227]" : "text-white"}`}>{value}</p>
+        {sub && <p className="mt-0.5 text-[11px] text-white/30">{sub}</p>}
+      </div>
     </div>
   );
 }
@@ -46,14 +57,12 @@ function KpiCard({ label, value, sub, gold }: { label: string; value: string | n
 function MiniBarChart({ data }: { data: { date: string; count: number }[] }) {
   const max = Math.max(...data.map((d) => d.count), 1);
   return (
-    <div className="flex items-end gap-1.5 h-14">
+    <div className="flex items-end gap-1.5 h-16">
       {data.map((d) => (
         <div key={d.date} className="flex flex-1 flex-col items-center gap-1">
-          <div
-            className="w-full rounded-t-sm bg-[#c9a227]/60 transition-all hover:bg-[#c9a227]"
-            style={{ height: `${Math.max((d.count / max) * 100, 4)}%` }}
-            title={`${d.date}: ${d.count}`}
-          />
+          <div className="w-full rounded-t bg-[#c9a227]/60 transition-all hover:bg-[#c9a227] cursor-default"
+            style={{ height: `${Math.max((d.count / max) * 100, 6)}%` }}
+            title={`${d.date}: ${d.count}`} />
           <span className="text-[9px] text-white/25">{d.date.slice(5)}</span>
         </div>
       ))}
@@ -61,16 +70,25 @@ function MiniBarChart({ data }: { data: { date: string; count: number }[] }) {
   );
 }
 
+/* ─── Icons (small inline SVGs) ─── */
+const icons = {
+  calendar: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  revenue: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  users: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  clock: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+};
+
 export function DashboardApp() {
   const router = useRouter();
   const sp = useSearchParams();
   const tab = sp.get("tab") || "dash";
   const { snapshot } = useSalonSocket();
 
+  /* State */
   const [role, setRole] = useState<"ADMIN" | "STAFF" | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [services, setServices] = useState<{ id: string; name: string; priceCents: number; durationMinutes: number; active: boolean }[]>([]);
+  const [services, setServices] = useState<ServiceRow[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [reviews, setReviews] = useState<{ id: string; authorName: string; text: string; rating: number; published: boolean }[]>([]);
   const [businessHours, setBusinessHours] = useState({ open: "09:00", close: "19:00", slotMinutes: 30 });
@@ -80,13 +98,22 @@ export function DashboardApp() {
   const [team, setTeam] = useState<TeamRow[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [staffModal, setStaffModal] = useState<{ mode: StaffModalMode; member?: StaffMember } | null>(null);
+  const [serviceModal, setServiceModal] = useState<{ mode: ServiceModalMode; service?: ServiceRow } | null>(null);
   const [staffDash, setStaffDash] = useState<{
     seat: number; waitingConfirmedToday: number; pendingApprovals: number; completedThisMonth: number;
     queueToday: Reservation[]; activeOnMySeat: Reservation | null;
   } | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
-  // Reviews form
   const [newReview, setNewReview] = useState({ authorName: "", text: "", rating: 5 });
+
+  /* Loading states */
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingRes, setLoadingRes] = useState(true);
+  const [loadingClients, setLoadingClients] = useState(true);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [loadingTeam, setLoadingTeam] = useState(true);
+  const [loadingStaff, setLoadingStaff] = useState(true);
+  const [loadingReviews, setLoadingReviews] = useState(true);
 
   /* ─── Loaders ─── */
   const loadMe = useCallback(async () => {
@@ -100,23 +127,31 @@ export function DashboardApp() {
   }, [router, sp]);
 
   const loadRes = useCallback(async () => {
+    setLoadingRes(true);
     const j = await fetch("/api/admin/reservations").then((r) => r.json());
     setReservations(j.reservations ?? []);
+    setLoadingRes(false);
   }, []);
 
   const loadStats = useCallback(async () => {
+    setLoadingStats(true);
     const j = await fetch("/api/admin/stats").then((r) => r.json());
     setStats(j);
+    setLoadingStats(false);
   }, []);
 
   const loadClients = useCallback(async () => {
+    setLoadingClients(true);
     const j = await fetch(`/api/admin/clients?q=${encodeURIComponent(clientQuery)}`).then((r) => r.json());
     setClients(j.clients ?? []);
+    setLoadingClients(false);
   }, [clientQuery]);
 
   const loadServices = useCallback(async () => {
-    const j = await fetch("/api/services").then((r) => r.json());
+    setLoadingServices(true);
+    const j = await fetch("/api/admin/services").then((r) => r.json());
     setServices(j.services ?? []);
+    setLoadingServices(false);
   }, []);
 
   const loadSettings = useCallback(async () => {
@@ -126,37 +161,46 @@ export function DashboardApp() {
   }, []);
 
   const loadReviews = useCallback(async () => {
+    setLoadingReviews(true);
     const j = await fetch("/api/admin/reviews").then((r) => r.json());
     setReviews(j.reviews ?? []);
+    setLoadingReviews(false);
   }, []);
 
   const loadTeam = useCallback(async () => {
+    setLoadingTeam(true);
     const j = await fetch("/api/admin/team-stats").then((r) => r.json());
     setTeam(j.team ?? []);
+    setLoadingTeam(false);
   }, []);
 
-  const loadStaff = useCallback(async () => {
+  const loadStaffDash = useCallback(async () => {
     const r = await fetch("/api/staff/dashboard");
     if (!r.ok) return;
     setStaffDash(await r.json());
   }, []);
 
   const loadStaffMembers = useCallback(async () => {
+    setLoadingStaff(true);
     const j = await fetch("/api/admin/staff").then((r) => r.json());
     setStaffMembers(j.staff ?? []);
+    setLoadingStaff(false);
   }, []);
 
   /* ─── Effects ─── */
   useEffect(() => { loadMe(); }, [loadMe]);
   useEffect(() => {
     if (!role) return;
-    if (role === "STAFF") { loadStaff(); return; }
-    loadRes(); loadStats(); loadServices(); loadSettings(); loadReviews();
-  }, [role, loadRes, loadStats, loadServices, loadSettings, loadReviews, loadStaff]);
-  useEffect(() => { if (role === "STAFF" && tab === "staff") loadStaff(); }, [role, tab, loadStaff]);
+    if (role === "STAFF") { loadStaffDash(); return; }
+    loadRes(); loadStats();
+  }, [role, loadRes, loadStats, loadStaffDash]);
+  useEffect(() => { if (role === "ADMIN" && tab === "services") loadServices(); }, [role, tab, loadServices]);
+  useEffect(() => { if (role === "ADMIN" && tab === "settings") loadSettings(); }, [role, tab, loadSettings]);
+  useEffect(() => { if (role === "ADMIN" && tab === "reviews") loadReviews(); }, [role, tab, loadReviews]);
   useEffect(() => { if (role === "ADMIN" && tab === "clients") loadClients(); }, [role, tab, loadClients]);
   useEffect(() => { if (role === "ADMIN" && tab === "equipe") loadTeam(); }, [role, tab, loadTeam]);
   useEffect(() => { if (role === "ADMIN" && tab === "staff") loadStaffMembers(); }, [role, tab, loadStaffMembers]);
+  useEffect(() => { if (role === "STAFF" && tab === "staff") loadStaffDash(); }, [role, tab, loadStaffDash]);
 
   /* ─── Actions ─── */
   async function patchReservation(id: string, body: Record<string, unknown>) {
@@ -172,14 +216,7 @@ export function DashboardApp() {
     await fetch(`/api/staff/reservations/${id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }),
     });
-    loadStaff(); loadRes();
-  }
-
-  async function saveService(id: string, data: { priceCents?: number; durationMinutes?: number; active?: boolean }) {
-    await fetch(`/api/admin/services/${id}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
-    });
-    loadServices();
+    loadStaffDash(); loadRes();
   }
 
   async function saveSettings() {
@@ -189,65 +226,69 @@ export function DashboardApp() {
       body: JSON.stringify({ businessHours, ...settingsContact }),
     });
     setSavingSettings(false);
-    if (r.ok) { showToast("success", "Paramètres enregistrés ✓"); loadSettings(); }
-    else showToast("error", "Erreur lors de l'enregistrement.");
+    if (r.ok) { showToast("success", "Paramètres enregistrés ✓"); } else showToast("error", "Erreur.");
   }
 
-  /* ─── Staff CRUD ─── */
+  /* Staff CRUD */
   async function handleStaffConfirm(form: StaffFormData) {
     if (!staffModal) return;
-    if (staffModal.mode === "add") {
-      const r = await fetch("/api/admin/staff", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) { showToast("error", j.error || "Erreur de création."); throw new Error(); }
-      showToast("success", `${form.name} ajouté ✓`);
-    } else if (staffModal.mode === "edit" && staffModal.member) {
-      const body: Record<string, unknown> = { name: form.name, email: form.email, phone: form.phone, seatNumber: form.seatNumber };
-      if (form.password) body.password = form.password;
-      const r = await fetch(`/api/admin/staff/${staffModal.member.id}`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) { showToast("error", j.error || "Erreur de mise à jour."); throw new Error(); }
-      showToast("success", "Membre mis à jour ✓");
-    } else if (staffModal.mode === "delete" && staffModal.member) {
-      const r = await fetch(`/api/admin/staff/${staffModal.member.id}`, { method: "DELETE" });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) { showToast("error", j.error || "Suppression impossible."); throw new Error(); }
-      showToast("success", "Membre supprimé ✓");
-    }
+    const endpoint = staffModal.mode === "add" ? "/api/admin/staff" :
+      `/api/admin/staff/${staffModal.member?.id}`;
+    const method = staffModal.mode === "delete" ? "DELETE" :
+      staffModal.mode === "add" ? "POST" : "PATCH";
+    const body: Record<string, unknown> = { name: form.name, email: form.email, phone: form.phone, seatNumber: form.seatNumber };
+    if (form.password) body.password = form.password;
+    const r = await fetch(endpoint, { method, headers: { "Content-Type": "application/json" }, body: method !== "DELETE" ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { showToast("error", j.error || "Erreur."); throw new Error(); }
+    showToast("success", staffModal.mode === "delete" ? "Supprimé ✓" : staffModal.mode === "add" ? "Ajouté ✓" : "Mis à jour ✓");
     loadStaffMembers(); loadTeam();
   }
 
-  /* ─── Reviews CRUD ─── */
+  /* Service CRUD */
+  async function handleServiceConfirm(form: ServiceFormData) {
+    if (!serviceModal) return;
+    if (serviceModal.mode === "add") {
+      const r = await fetch("/api/admin/services", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { showToast("error", j.error || "Erreur."); throw new Error(); }
+      showToast("success", `Service « ${form.name} » ajouté ✓`);
+    } else if (serviceModal.mode === "edit" && serviceModal.service) {
+      const r = await fetch(`/api/admin/services/${serviceModal.service.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+      });
+      if (!r.ok) { showToast("error", "Erreur de mise à jour."); throw new Error(); }
+      showToast("success", "Service mis à jour ✓");
+    } else if (serviceModal.mode === "delete" && serviceModal.service) {
+      const r = await fetch(`/api/admin/services/${serviceModal.service.id}`, { method: "DELETE" });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { showToast("error", "Erreur."); throw new Error(); }
+      showToast("success", j.softDeleted ? "Service désactivé (réservations existantes) ✓" : "Service supprimé ✓");
+    }
+    loadServices();
+  }
+
+  /* Reviews CRUD */
   async function createReview(e: React.FormEvent) {
     e.preventDefault();
     const r = await fetch("/api/admin/reviews", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newReview),
     });
-    if (r.ok) {
-      showToast("success", "Avis ajouté ✓");
-      setNewReview({ authorName: "", text: "", rating: 5 });
-      loadReviews();
-    } else showToast("error", "Erreur lors de la création.");
+    if (r.ok) { showToast("success", "Avis ajouté ✓"); setNewReview({ authorName: "", text: "", rating: 5 }); loadReviews(); }
+    else showToast("error", "Erreur.");
   }
-
   async function toggleReview(id: string, published: boolean) {
-    await fetch(`/api/admin/reviews/${id}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ published }),
-    });
+    await fetch(`/api/admin/reviews/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ published }) });
     loadReviews();
   }
-
   async function deleteReview(id: string) {
     const r = await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
     if (r.ok) { showToast("success", "Avis supprimé ✓"); loadReviews(); }
-    else showToast("error", "Erreur lors de la suppression.");
   }
 
-  /* ─── Loading state ─── */
+  /* ─── Loading ─── */
   if (!role) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -264,19 +305,18 @@ export function DashboardApp() {
     return (
       <div className="mx-auto max-w-5xl px-4 py-10">
         <h1 className="text-2xl font-semibold text-white">Mon poste</h1>
-        {staffDash && (
+        {staffDash ? (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiCard label="Siège" value={staffDash.seat} gold />
-            <KpiCard label="RDV confirmés aujourd'hui" value={staffDash.waitingConfirmedToday} />
-            <KpiCard label="Demandes en attente" value={staffDash.pendingApprovals} />
-            <KpiCard label="Terminés ce mois" value={staffDash.completedThisMonth} />
+            <KpiCard label="Siège" value={staffDash.seat} gold icon={icons.calendar} />
+            <KpiCard label="Confirmés aujourd'hui" value={staffDash.waitingConfirmedToday} icon={icons.clock} />
+            <KpiCard label="En attente" value={staffDash.pendingApprovals} icon={icons.users} />
+            <KpiCard label="Terminés ce mois" value={staffDash.completedThisMonth} icon={icons.revenue} />
           </div>
-        )}
+        ) : <SkeletonKpiGrid />}
         {staffDash?.activeOnMySeat && (
           <div className="mt-8 rounded-2xl border border-[#c9a227]/30 bg-[#c9a227]/10 p-6">
-            <p className="text-sm font-semibold text-[#f0e6b8]">Client en cours sur votre siège</p>
-            <p className="mt-2 text-white">{staffDash.activeOnMySeat.user.name}</p>
-            <p className="text-sm text-white/65">{staffDash.activeOnMySeat.service.name}</p>
+            <p className="text-sm font-semibold text-[#f0e6b8]">Client en cours</p>
+            <p className="mt-2 text-white">{staffDash.activeOnMySeat.user.name} — {staffDash.activeOnMySeat.service.name}</p>
             <button type="button" onClick={() => staffAction(staffDash.activeOnMySeat!.id, "complete")}
               className="mt-4 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black hover:bg-white/90 active:scale-95 transition-all cursor-pointer">
               Marquer terminé
@@ -284,16 +324,14 @@ export function DashboardApp() {
           </div>
         )}
         <div className="mt-10">
-          <h2 className="text-lg font-semibold text-white">File du jour (confirmés)</h2>
+          <h2 className="text-lg font-semibold text-white">File du jour</h2>
           <ul className="mt-4 space-y-2 text-sm text-white/80">
             {(staffDash?.queueToday ?? []).map((r) => (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
                 <span>{r.user.name} — {r.service.name} — {formatDateTimeFr(r.scheduledAt)}</span>
                 {r.status === "CONFIRMED" && (
                   <button type="button" onClick={() => staffAction(r.id, "start")}
-                    className="rounded-full bg-emerald-500/25 px-3 py-1 text-xs font-semibold text-emerald-100 hover:bg-emerald-500/40 active:scale-95 transition-all cursor-pointer">
-                    Démarrer sur mon siège
-                  </button>
+                    className="rounded-full bg-emerald-500/25 px-3 py-1 text-xs font-semibold text-emerald-100 hover:bg-emerald-500/40 active:scale-95 cursor-pointer transition-all">Démarrer</button>
                 )}
               </li>
             ))}
@@ -302,256 +340,284 @@ export function DashboardApp() {
       </div>
     );
   }
-
   if (role === "STAFF" && tab === "compte") return <DashboardCompte />;
 
-  /* ─── ADMIN tabs ─── */
+  /* ═══════════════════ ADMIN TABS ═══════════════════ */
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      {/* Page header */}
-      <div className="border-b border-white/10 pb-6">
+      <div className="pb-6">
         <p className="text-xs uppercase tracking-[0.35em] text-[#c9a227]">Administration</p>
         <h1 className="font-[family-name:var(--font-display)] text-4xl text-white">L&apos;Artiste</h1>
-        <p className="mt-2 text-sm text-white/55">Kairouan, Tunisie — Gestion du salon.</p>
       </div>
 
-      {/* ── DASH TAB ── */}
+      {/* ── DASHBOARD OVERVIEW ── */}
       {tab === "dash" && (
-        <div className="mt-8 space-y-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiCard label="Terminés aujourd'hui" value={stats?.clients.day ?? "—"} />
-            <KpiCard label="Terminés cette semaine" value={stats?.clients.week ?? "—"} />
-            <KpiCard label="Terminés ce mois" value={stats?.clients.month ?? "—"} />
-            <KpiCard label="CA du mois" value={stats ? `${(stats.revenue.monthCents / 100).toFixed(0)} TND` : "—"} gold />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <KpiCard label="En attente de validation" value={stats?.pending ?? "—"} sub="réservations à traiter" />
-            <KpiCard label="Annulées ce mois" value={stats?.cancelledMonth ?? "—"} />
-            <KpiCard label="Clients inscrits total" value={stats?.clients.total ?? "—"} />
-          </div>
+        <div className="space-y-8">
+          {loadingStats ? <SkeletonKpiGrid /> : (
+            <>
+              {/* Row 1: Key metrics */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <KpiCard label="Aujourd'hui" value={stats?.clients.day ?? 0} icon={icons.calendar} sub="terminés" />
+                <KpiCard label="Cette semaine" value={stats?.clients.week ?? 0} icon={icons.clock} sub="terminés" />
+                <KpiCard label="Ce mois" value={stats?.clients.month ?? 0} icon={icons.users} sub="terminés" />
+                <KpiCard label="Chiffre du mois" value={stats ? `${(stats.revenue.monthCents / 100).toFixed(0)} TND` : "0"} gold icon={icons.revenue} />
+              </div>
 
+              {/* Row 2: Status overview */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <KpiCard label="En attente" value={stats?.pending ?? 0} sub="à valider" />
+                <KpiCard label="Annulées" value={stats?.cancelledMonth ?? 0} sub="ce mois" />
+                <KpiCard label="Clients inscrits" value={stats?.clients.total ?? 0} sub="total" />
+              </div>
+            </>
+          )}
+
+          {/* Chart */}
           {stats?.dailyChart && stats.dailyChart.length > 0 && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <h2 className="text-sm font-semibold text-white mb-4">Réservations terminées — 7 derniers jours</h2>
+              <h2 className="text-sm font-semibold text-white/80 mb-4">7 derniers jours</h2>
               <MiniBarChart data={stats.dailyChart} />
             </div>
           )}
 
+          {/* Live seats — compact */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            <h2 className="text-lg font-semibold text-white">Sièges en direct</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <h2 className="text-sm font-semibold text-white/80 mb-4">Sièges en direct</h2>
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
               {(snapshot?.seats ?? []).map((s) => (
-                <div key={s.seatNumber} className={`rounded-xl border p-4 ${s.status === "occupied" ? "border-[#c9a227]/30 bg-[#c9a227]/5" : "border-white/10 bg-black/40"}`}>
-                  <p className="text-xs text-white/45">Siège {s.seatNumber}</p>
-                  <p className="mt-2 text-sm font-semibold text-white">{s.status === "occupied" ? s.clientName : "Disponible"}</p>
-                  {s.remainingMinutes != null && <p className="mt-1 text-xs text-[#c9a227]">~ {s.remainingMinutes} min</p>}
+                <div key={s.seatNumber} className={`rounded-xl border px-4 py-3 ${s.status === "occupied" ? "border-[#c9a227]/30 bg-[#c9a227]/5" : "border-white/10 bg-black/20"}`}>
+                  <p className="text-[10px] uppercase tracking-wider text-white/35">Siège {s.seatNumber}</p>
+                  <p className="mt-1 text-sm font-medium text-white truncate">{s.status === "occupied" ? s.clientName : "Libre"}</p>
+                  {s.remainingMinutes != null && <p className="text-[11px] text-[#c9a227]">~ {s.remainingMinutes} min</p>}
                 </div>
               ))}
-              {(!snapshot?.seats || snapshot.seats.length === 0) && (
-                <p className="text-sm text-white/30 col-span-5">Données en cours de chargement…</p>
-              )}
+              {(!snapshot?.seats || snapshot.seats.length === 0) && <p className="text-sm text-white/30 col-span-5">Chargement…</p>}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            <h2 className="text-lg font-semibold text-white">Top services (30 j.)</h2>
-            <ul className="mt-4 space-y-2">
-              {(stats?.topServices ?? []).map((t, i) => (
-                <li key={i} className="flex items-center justify-between text-sm text-white/75">
-                  <span>{t.service?.name ?? "—"}</span>
-                  <span className="text-[#c9a227] font-semibold">{t.count}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* ── RES TAB ── */}
-      {tab === "res" && (
-        <div className="mt-8 overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-white/45">
-                <th className="py-3 pr-4">Client</th>
-                <th className="py-3 pr-4">Service</th>
-                <th className="py-3 pr-4">Créneau</th>
-                <th className="py-3 pr-4">Statut</th>
-                <th className="py-3 pr-4">Siège</th>
-                <th className="py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="text-white/85">
-              {reservations.map((r) => (
-                <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                  <td className="py-3 pr-4">
-                    <div className="font-medium">{r.user.name}</div>
-                    <div className="text-xs text-white/45">{r.user.email}</div>
-                  </td>
-                  <td className="py-3 pr-4">{r.service.name}</td>
-                  <td className="py-3 pr-4 whitespace-nowrap">{formatDateTimeFr(r.scheduledAt)}</td>
-                  <td className="py-3 pr-4">{STATUS_LABEL[r.status] ?? r.status}</td>
-                  <td className="py-3 pr-4">{r.seatNumber ?? "—"}</td>
-                  <td className="py-3">
-                    <div className="flex flex-col gap-1.5">
-                      {r.status === "PENDING" && (
-                        <div className="flex flex-wrap gap-1">
-                          <button type="button" onClick={() => patchReservation(r.id, { action: "approve" })}
-                            className="rounded-full bg-emerald-500/25 px-2 py-1 text-[11px] text-emerald-100 hover:bg-emerald-500/40 cursor-pointer active:scale-95 transition-all">Accepter</button>
-                          <button type="button" onClick={() => patchReservation(r.id, { action: "reject" })}
-                            className="rounded-full bg-red-500/20 px-2 py-1 text-[11px] text-red-200 hover:bg-red-500/30 cursor-pointer active:scale-95 transition-all">Refuser</button>
-                        </div>
-                      )}
-                      {r.status === "CONFIRMED" && (
-                        <div className="flex flex-wrap gap-1">
-                          {[1,2,3,4,5].map((n) => (
-                            <button key={n} type="button" onClick={() => patchReservation(r.id, { status: "IN_PROGRESS", seatNumber: n })}
-                              className="rounded-full bg-emerald-500/20 px-2 py-1 text-[11px] text-emerald-100 hover:bg-emerald-500/35 cursor-pointer active:scale-95 transition-all">S{n}</button>
-                          ))}
-                        </div>
-                      )}
-                      {r.status === "IN_PROGRESS" && (
-                        <button type="button" onClick={() => patchReservation(r.id, { status: "COMPLETED" })}
-                          className="rounded-full bg-white/10 px-3 py-1 text-xs hover:bg-white/20 cursor-pointer active:scale-95 transition-all">Terminer</button>
-                      )}
-                      {!["CANCELLED","COMPLETED","REJECTED"].includes(r.status) && (
-                        <button type="button" onClick={() => patchReservation(r.id, { status: "CANCELLED" })}
-                          className="rounded-full bg-red-500/15 px-3 py-1 text-xs text-red-200 hover:bg-red-500/25 cursor-pointer active:scale-95 transition-all">Annuler</button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ── EQUIPE TAB ── */}
-      {tab === "equipe" && (
-        <div className="mt-8 space-y-4">
-          <h2 className="text-lg font-semibold text-white">Performances par coiffeur</h2>
-          <div className="grid gap-3 md:grid-cols-2">
-            {team.map((t) => (
-              <div key={t.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c9a227]/15 text-sm font-bold text-[#c9a227]">
-                    {t.name.charAt(0)}
+          {/* Top services — compact list */}
+          {stats?.topServices && stats.topServices.length > 0 && (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+              <h2 className="text-sm font-semibold text-white/80 mb-3">Top services (30 j.)</h2>
+              <div className="space-y-1.5">
+                {stats.topServices.slice(0, 5).map((t, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm py-1">
+                    <span className="text-white/70">{t.service?.name ?? "—"}</span>
+                    <span className="text-[#c9a227] font-bold">{t.count}</span>
                   </div>
-                  <div>
-                    <p className="font-semibold text-white">{t.name}</p>
-                    <p className="text-xs text-white/45">Siège {t.seatNumber ?? "—"}</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex gap-6 text-sm">
-                  <div><p className="text-xs text-white/40">Ce mois</p><p className="text-[#c9a227] font-semibold">{t.completedThisMonth}</p></div>
-                  <div><p className="text-xs text-white/40">Total</p><p className="text-white font-semibold">{t.completedTotal}</p></div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── STAFF TAB ── */}
+      {/* ── RESERVATIONS ── */}
+      {tab === "res" && (
+        <div className="mt-4">
+          {loadingRes ? <SkeletonTable rows={8} cols={5} /> : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-[11px] uppercase tracking-wider text-white/40">
+                    <th className="py-3 pr-4">Client</th>
+                    <th className="py-3 pr-4">Service</th>
+                    <th className="py-3 pr-4">Créneau</th>
+                    <th className="py-3 pr-4">Statut</th>
+                    <th className="py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="text-white/85">
+                  {reservations.map((r) => (
+                    <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <td className="py-3 pr-4">
+                        <p className="font-medium">{r.user.name}</p>
+                        <p className="text-xs text-white/40">{r.user.email}</p>
+                      </td>
+                      <td className="py-3 pr-4">{r.service.name}</td>
+                      <td className="py-3 pr-4 whitespace-nowrap text-xs">{formatDateTimeFr(r.scheduledAt)}</td>
+                      <td className="py-3 pr-4">
+                        <span className="flex items-center gap-1.5">
+                          <span className={`h-2 w-2 rounded-full ${STATUS_DOT[r.status] ?? ""}`} />
+                          {STATUS_LABEL[r.status] ?? r.status}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {r.status === "PENDING" && (
+                            <>
+                              <button type="button" onClick={() => patchReservation(r.id, { action: "approve" })}
+                                className="rounded-full bg-emerald-500/25 px-2.5 py-1 text-[11px] text-emerald-100 hover:bg-emerald-500/40 active:scale-95 cursor-pointer transition-all">Accepter</button>
+                              <button type="button" onClick={() => patchReservation(r.id, { action: "reject" })}
+                                className="rounded-full bg-red-500/20 px-2.5 py-1 text-[11px] text-red-200 hover:bg-red-500/30 active:scale-95 cursor-pointer transition-all">Refuser</button>
+                            </>
+                          )}
+                          {r.status === "CONFIRMED" && (
+                            <div className="flex gap-1">
+                              {[1,2,3,4,5].map((n) => (
+                                <button key={n} type="button" onClick={() => patchReservation(r.id, { status: "IN_PROGRESS", seatNumber: n })}
+                                  className="rounded-full bg-blue-500/20 px-2 py-1 text-[11px] text-blue-200 hover:bg-blue-500/35 active:scale-95 cursor-pointer transition-all">S{n}</button>
+                              ))}
+                            </div>
+                          )}
+                          {r.status === "IN_PROGRESS" && (
+                            <button type="button" onClick={() => patchReservation(r.id, { status: "COMPLETED" })}
+                              className="rounded-full bg-green-500/20 px-3 py-1 text-[11px] text-green-200 hover:bg-green-500/35 active:scale-95 cursor-pointer transition-all">Terminer</button>
+                          )}
+                          {!["CANCELLED","COMPLETED","REJECTED"].includes(r.status) && (
+                            <button type="button" onClick={() => patchReservation(r.id, { status: "CANCELLED" })}
+                              className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-white/50 hover:bg-red-500/15 hover:text-red-200 active:scale-95 cursor-pointer transition-all">Annuler</button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TEAM PERFORMANCE ── */}
+      {tab === "equipe" && (
+        <div className="mt-4 space-y-4">
+          <h2 className="text-lg font-semibold text-white">Performances par coiffeur</h2>
+          {loadingTeam ? <SkeletonRows count={3} /> : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {team.map((t) => (
+                <div key={t.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c9a227]/15 text-sm font-bold text-[#c9a227]">{t.name.charAt(0)}</div>
+                    <div>
+                      <p className="font-semibold text-white">{t.name}</p>
+                      <p className="text-xs text-white/40">Siège {t.seatNumber ?? "—"}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-8 text-sm">
+                    <div><p className="text-[11px] uppercase tracking-wider text-white/35">Ce mois</p><p className="text-xl font-bold text-[#c9a227] mt-0.5">{t.completedThisMonth}</p></div>
+                    <div><p className="text-[11px] uppercase tracking-wider text-white/35">Total</p><p className="text-xl font-bold text-white mt-0.5">{t.completedTotal}</p></div>
+                  </div>
+                </div>
+              ))}
+              {team.length === 0 && <p className="text-sm text-white/40">Aucun membre staff trouvé. Les performances s&apos;affichent quand un staff termine des réservations.</p>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── STAFF MANAGEMENT ── */}
       {tab === "staff" && (
-        <div className="mt-8 space-y-8">
+        <div className="mt-4 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white">Membres staff</h2>
-            <button type="button"
-              onClick={() => setStaffModal({ mode: "add" })}
+            <button type="button" onClick={() => setStaffModal({ mode: "add" })}
               className="flex items-center gap-2 rounded-full bg-[#c9a227] px-4 py-2 text-sm font-semibold text-black hover:bg-[#e4c04a] active:scale-95 transition-all cursor-pointer">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Ajouter
+              + Ajouter
             </button>
           </div>
-          <div className="space-y-3">
-            {staffMembers.map((m) => (
-              <div key={m.id} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#c9a227]/15 text-sm font-bold text-[#c9a227]">{m.name.charAt(0)}</div>
-                  <div>
-                    <p className="font-semibold text-white">{m.name}</p>
-                    <p className="text-sm text-white/55">{m.email}{m.phone ? ` • ${m.phone}` : ""} • Siège {m.seatNumber ?? "—"}</p>
+          {loadingStaff ? <SkeletonRows count={3} /> : (
+            <div className="space-y-3">
+              {staffMembers.map((m) => (
+                <div key={m.id} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#c9a227]/15 text-sm font-bold text-[#c9a227]">{m.name.charAt(0)}</div>
+                    <div>
+                      <p className="font-semibold text-white">{m.name}</p>
+                      <p className="text-sm text-white/50">{m.email}{m.phone ? ` • ${m.phone}` : ""} • Siège {m.seatNumber ?? "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setStaffModal({ mode: "edit", member: m })}
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/80 hover:bg-white/5 active:scale-95 cursor-pointer transition-all">Modifier</button>
+                    <button type="button" onClick={() => setStaffModal({ mode: "delete", member: m })}
+                      className="rounded-full border border-red-400/30 px-3 py-1.5 text-xs text-red-200 hover:bg-red-500/10 active:scale-95 cursor-pointer transition-all">Supprimer</button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setStaffModal({ mode: "edit", member: m })}
-                    className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/85 hover:bg-white/5 active:scale-95 transition-all cursor-pointer">Modifier</button>
-                  <button type="button" onClick={() => setStaffModal({ mode: "delete", member: m })}
-                    className="rounded-full border border-red-400/30 px-3 py-1.5 text-xs text-red-200 hover:bg-red-500/10 active:scale-95 transition-all cursor-pointer">Supprimer</button>
-                </div>
-              </div>
-            ))}
-            {staffMembers.length === 0 && <p className="text-sm text-white/40">Aucun membre staff.</p>}
-          </div>
+              ))}
+              {staffMembers.length === 0 && <p className="text-sm text-white/40">Aucun membre staff.</p>}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── CLIENTS TAB ── */}
+      {/* ── CLIENTS ── */}
       {tab === "clients" && (
-        <div className="mt-8 space-y-4">
+        <div className="mt-4 space-y-4">
           <input value={clientQuery} onChange={(e) => setClientQuery(e.target.value)}
             placeholder="Rechercher (nom, e-mail, téléphone)"
             className="w-full max-w-md rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
-          <div className="grid gap-3 md:grid-cols-2">
-            {clients.map((c) => (
-              <div key={c.id} className="space-y-0">
-                <button type="button" onClick={() => setSelectedClientId(selectedClientId === c.id ? null : c.id)}
-                  className="w-full text-left rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:border-[#c9a227]/30 hover:bg-white/[0.06] transition-all cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-white">{c.name}</p>
-                      <p className="text-sm text-white/55">{c.email}</p>
-                      {c.phone && <p className="text-xs text-white/40">{c.phone}</p>}
+          {loadingClients ? <SkeletonRows count={4} /> : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {clients.map((c) => (
+                <div key={c.id}>
+                  <button type="button" onClick={() => setSelectedClientId(selectedClientId === c.id ? null : c.id)}
+                    className="w-full text-left rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:border-[#c9a227]/30 hover:bg-white/[0.06] transition-all cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-white">{c.name}</p>
+                        <p className="text-sm text-white/50">{c.email}</p>
+                        {c.phone && <p className="text-xs text-white/35">{c.phone}</p>}
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/25 transition-transform ${selectedClientId === c.id ? "rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                      className={`shrink-0 text-white/30 transition-transform ${selectedClientId === c.id ? "rotate-180" : ""}`}>
-                      <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                  </div>
-                </button>
-                {selectedClientId === c.id && (
-                  <ClientHistoryPanel clientId={c.id} onClose={() => setSelectedClientId(null)} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── SERVICES TAB ── */}
-      {tab === "services" && (
-        <div className="mt-8 space-y-4">
-          {services.map((s) => (
-            <div key={s.id} className="grid gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:grid-cols-[1fr_auto_auto_auto]">
-              <div>
-                <p className="font-semibold text-white">{s.name}</p>
-                <p className="text-xs text-white/40">ID: {s.id}</p>
-              </div>
-              <label className="text-xs text-white/55">Prix (centimes)
-                <input type="number" defaultValue={s.priceCents}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-sm text-white"
-                  onBlur={(e) => saveService(s.id, { priceCents: Number(e.target.value) })} />
-              </label>
-              <label className="text-xs text-white/55">Durée (min)
-                <input type="number" defaultValue={s.durationMinutes}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-sm text-white"
-                  onBlur={(e) => saveService(s.id, { durationMinutes: Number(e.target.value) })} />
-              </label>
-              <label className="flex items-center gap-2 text-xs text-white/55 cursor-pointer">
-                <input type="checkbox" defaultChecked={s.active} onChange={(e) => saveService(s.id, { active: e.target.checked })} className="cursor-pointer" />
-                Actif
-              </label>
+                  </button>
+                  {selectedClientId === c.id && <ClientHistoryPanel clientId={c.id} onClose={() => setSelectedClientId(null)} />}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* ── REVIEWS TAB ── */}
+      {/* ── SERVICES CRUD ── */}
+      {tab === "services" && (
+        <div className="mt-4 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white">Services</h2>
+            <button type="button" onClick={() => setServiceModal({ mode: "add" })}
+              className="flex items-center gap-2 rounded-full bg-[#c9a227] px-4 py-2 text-sm font-semibold text-black hover:bg-[#e4c04a] active:scale-95 transition-all cursor-pointer">
+              + Ajouter
+            </button>
+          </div>
+          {loadingServices ? <SkeletonRows count={4} /> : (
+            <div className="space-y-3">
+              {services.map((s) => (
+                <div key={s.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${s.active ? "bg-[#c9a227]/15 text-[#c9a227]" : "bg-white/5 text-white/30"}`}>
+                        {s.name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-white">{s.name}
+                          {!s.active && <span className="ml-2 text-[10px] uppercase tracking-wider text-white/30 border border-white/10 rounded-full px-1.5 py-0.5">inactif</span>}
+                        </p>
+                        <p className="text-sm text-white/50">
+                          {(s.priceCents / 100).toFixed(2)} TND • {s.durationMinutes} min
+                          {s.category && ` • ${s.category}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setServiceModal({ mode: "edit", service: s })}
+                        className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/80 hover:bg-white/5 active:scale-95 cursor-pointer transition-all">Modifier</button>
+                      <button type="button" onClick={() => setServiceModal({ mode: "delete", service: s })}
+                        className="rounded-full border border-red-400/30 px-3 py-1.5 text-xs text-red-200 hover:bg-red-500/10 active:scale-95 cursor-pointer transition-all">Supprimer</button>
+                    </div>
+                  </div>
+                  {s.description && <p className="mt-2 text-xs text-white/40 ml-[52px]">{s.description}</p>}
+                </div>
+              ))}
+              {services.length === 0 && <p className="text-sm text-white/40">Aucun service configuré.</p>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── REVIEWS ── */}
       {tab === "reviews" && (
-        <div className="mt-8 space-y-8">
-          {/* Add review form */}
+        <div className="mt-4 space-y-8">
           <form onSubmit={createReview} className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
             <h2 className="text-base font-semibold text-white">Ajouter un avis</h2>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -567,46 +633,42 @@ export function DashboardApp() {
               placeholder="Texte de l'avis…" rows={3}
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
             <button type="submit"
-              className="rounded-full bg-[#c9a227] px-5 py-2 text-sm font-semibold text-black hover:bg-[#e4c04a] active:scale-95 transition-all cursor-pointer">
-              Ajouter l&apos;avis
-            </button>
+              className="rounded-full bg-[#c9a227] px-5 py-2 text-sm font-semibold text-black hover:bg-[#e4c04a] active:scale-95 transition-all cursor-pointer">Ajouter</button>
           </form>
-
-          {/* List */}
-          <div className="space-y-3">
-            {reviews.map((r) => (
-              <div key={r.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-white">{r.authorName}</p>
-                      <span className="text-xs text-[#c9a227]">{"★".repeat(r.rating)}</span>
-                      <span className={`rounded-full border px-1.5 py-0.5 text-[10px] ${r.published ? "border-emerald-500/30 text-emerald-300" : "border-white/10 text-white/40"}`}>
-                        {r.published ? "Publié" : "Masqué"}
-                      </span>
+          {loadingReviews ? <SkeletonRows count={3} /> : (
+            <div className="space-y-3">
+              {reviews.map((r) => (
+                <div key={r.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-white">{r.authorName}</p>
+                        <span className="text-xs text-[#c9a227]">{"★".repeat(r.rating)}</span>
+                        <span className={`rounded-full border px-1.5 py-0.5 text-[10px] ${r.published ? "border-emerald-500/30 text-emerald-300" : "border-white/10 text-white/40"}`}>
+                          {r.published ? "Publié" : "Masqué"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-white/65">{r.text}</p>
                     </div>
-                    <p className="mt-1 text-sm text-white/70">{r.text}</p>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <button type="button" onClick={() => toggleReview(r.id, !r.published)}
-                      className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/70 hover:bg-white/5 active:scale-95 transition-all cursor-pointer">
-                      {r.published ? "Masquer" : "Publier"}
-                    </button>
-                    <button type="button" onClick={() => deleteReview(r.id)}
-                      className="rounded-full border border-red-400/20 px-3 py-1 text-xs text-red-300 hover:bg-red-500/10 active:scale-95 transition-all cursor-pointer">
-                      Supprimer
-                    </button>
+                    <div className="flex shrink-0 gap-2">
+                      <button type="button" onClick={() => toggleReview(r.id, !r.published)}
+                        className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/70 hover:bg-white/5 active:scale-95 cursor-pointer transition-all">
+                        {r.published ? "Masquer" : "Publier"}
+                      </button>
+                      <button type="button" onClick={() => deleteReview(r.id)}
+                        className="rounded-full border border-red-400/20 px-3 py-1 text-xs text-red-300 hover:bg-red-500/10 active:scale-95 cursor-pointer transition-all">Supprimer</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── SETTINGS TAB ── */}
+      {/* ── SETTINGS ── */}
       {tab === "settings" && (
-        <div className="mt-8 max-w-2xl space-y-6">
+        <div className="mt-4 max-w-2xl space-y-6">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
             <h2 className="text-base font-semibold text-white">Horaires &amp; créneaux</h2>
             <div className="grid gap-4 sm:grid-cols-3">
@@ -628,18 +690,17 @@ export function DashboardApp() {
               </div>
             </div>
           </div>
-
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
             <h2 className="text-base font-semibold text-white">Contact &amp; adresse</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="text-xs uppercase tracking-wider text-white/50">Téléphone affiché</label>
+                <label className="text-xs uppercase tracking-wider text-white/50">Téléphone</label>
                 <input value={settingsContact.phone} onChange={(e) => setSettingsContact((s) => ({ ...s, phone: e.target.value }))}
                   placeholder="+216 XX XXX XXX"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-white/50">Numéro WhatsApp</label>
+                <label className="text-xs uppercase tracking-wider text-white/50">WhatsApp</label>
                 <input value={settingsContact.whatsapp} onChange={(e) => setSettingsContact((s) => ({ ...s, whatsapp: e.target.value }))}
                   placeholder="+21620392769"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
@@ -647,46 +708,39 @@ export function DashboardApp() {
               <div className="sm:col-span-2">
                 <label className="text-xs uppercase tracking-wider text-white/50">Adresse du salon</label>
                 <input value={settingsContact.salonAddress} onChange={(e) => setSettingsContact((s) => ({ ...s, salonAddress: e.target.value }))}
-                  placeholder="Rue Ibn Khaldoun, Kairouan, Tunisie"
+                  placeholder="Rue Ibn Khaldoun, Kairouan"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs uppercase tracking-wider text-white/50">E-mail de notification admin</label>
+                <label className="text-xs uppercase tracking-wider text-white/50">E-mail admin</label>
                 <input type="email" value={settingsContact.adminEmail} onChange={(e) => setSettingsContact((s) => ({ ...s, adminEmail: e.target.value }))}
                   placeholder="admin@salon.tn"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
               </div>
             </div>
           </div>
-
           <button type="button" onClick={saveSettings} disabled={savingSettings}
             className="rounded-full bg-[#c9a227] px-6 py-3 text-sm font-semibold text-black hover:bg-[#e4c04a] active:scale-95 transition-all cursor-pointer disabled:opacity-60">
-            {savingSettings ? "Enregistrement…" : "Enregistrer tous les paramètres"}
+            {savingSettings ? "Enregistrement…" : "Enregistrer les paramètres"}
           </button>
         </div>
       )}
 
-      {/* ── MEDIA TAB ── */}
       {tab === "media" && <AdminMediaPanel />}
-
-      {/* ── COMPTE TAB ── */}
       {tab === "compte" && <DashboardCompte />}
 
-      {/* ── Staff Modal ── */}
+      {/* Modals */}
       {staffModal && (
-        <StaffModal
-          mode={staffModal.mode}
-          initial={staffModal.member ? {
-            id: staffModal.member.id,
-            name: staffModal.member.name,
-            email: staffModal.member.email,
-            phone: staffModal.member.phone ?? "",
-            seatNumber: staffModal.member.seatNumber ?? 1,
-          } : undefined}
+        <StaffModal mode={staffModal.mode}
+          initial={staffModal.member ? { id: staffModal.member.id, name: staffModal.member.name, email: staffModal.member.email, phone: staffModal.member.phone ?? "", seatNumber: staffModal.member.seatNumber ?? 1 } : undefined}
           targetName={staffModal.member?.name}
-          onConfirm={handleStaffConfirm}
-          onClose={() => setStaffModal(null)}
-        />
+          onConfirm={handleStaffConfirm} onClose={() => setStaffModal(null)} />
+      )}
+      {serviceModal && (
+        <ServiceModal mode={serviceModal.mode}
+          initial={serviceModal.service ? { id: serviceModal.service.id, name: serviceModal.service.name, slug: serviceModal.service.slug, description: serviceModal.service.description ?? "", priceCents: serviceModal.service.priceCents, durationMinutes: serviceModal.service.durationMinutes, category: serviceModal.service.category ?? "", active: serviceModal.service.active } : undefined}
+          targetName={serviceModal.service?.name}
+          onConfirm={handleServiceConfirm} onClose={() => setServiceModal(null)} />
       )}
     </div>
   );
