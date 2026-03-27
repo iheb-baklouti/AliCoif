@@ -1,5 +1,6 @@
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { WhatsAppBubble } from "@/components/WhatsAppBubble";
 
 export default function SiteLayout({
   children,
@@ -16,6 +17,7 @@ export default function SiteLayout({
         {children}
       </main>
       <SiteFooter />
+      <WhatsAppBubble />
     </div>
   );
 }
