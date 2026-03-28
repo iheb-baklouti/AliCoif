@@ -73,8 +73,8 @@ export function ConnexionForm() {
               />
             </div>
             <div className="relative flex items-center justify-center py-2">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10" /></div>
-              <span className="relative bg-[#0d0d0d] px-2 text-xs text-white/40 uppercase tracking-widest">OU</span>
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[var(--border-subtle)]" /></div>
+              <span className="relative bg-[var(--background)] px-2 text-xs text-[var(--text-muted)] uppercase tracking-widest">OU</span>
             </div>
           </GoogleOAuthProvider>
         )}
