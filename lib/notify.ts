@@ -24,34 +24,31 @@ export async function sendMailTo(to: string, subject: string, text: string) {
 }
 
 /**
- * Envoie un message WhatsApp via CallMeBot (gratuit, sans inscription API).
- * Configurer CALLMEBOT_PHONE (+21620392769) et CALLMEBOT_APIKEY dans l'env.
- * Pour obtenir la clé : envoyer "I allow callmebot to send me messages" sur
- * WhatsApp au +34 644 97 73 30.
+ * Envoie un message Telegram à l'Admin.
+ * Configurer TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID dans l'env.
  */
-async function sendWhatsApp(phone: string, message: string) {
-  const apiKey = process.env.CALLMEBOT_APIKEY;
-  const botPhone = process.env.CALLMEBOT_PHONE;
+async function sendTelegramAdmin(message: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
 
-  if (!apiKey || !botPhone) {
-    // Fallback: log un lien wa.me cliquable dans les logs Vercel
-    const link = `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(message.slice(0, 200))}`;
-    console.info("[whatsapp link]", link);
+  if (!token || !chatId) {
+    console.info("[telegram stub]", message.slice(0, 200));
     return;
   }
 
-  const url = new URL("https://api.callmebot.com/whatsapp.php");
-  url.searchParams.set("phone", botPhone);
-  url.searchParams.set("text", message.slice(0, 400));
-  url.searchParams.set("apikey", apiKey);
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
   try {
-    const res = await fetch(url.toString(), { method: "GET" });
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: message }),
+    });
     if (!res.ok) {
-      console.warn("[callmebot] Erreur", res.status, await res.text().catch(() => ""));
+      console.warn("[telegram] Erreur", res.status, await res.text().catch(() => ""));
     }
   } catch (err) {
-    console.warn("[callmebot] Échec réseau", err);
+    console.warn("[telegram] Échec réseau", err);
   }
 }
 
@@ -74,12 +71,9 @@ export async function notifyAdminNewReservation(opts: {
     console.info("[admin notify email skipped — ADMIN_NOTIFY_EMAIL / SMTP_USER]", body);
   }
 
-  if (adminWa) {
-    await sendWhatsApp(
-      adminWa,
-      `L'Artiste — Nouvelle réservation\n${opts.clientName} — ${opts.serviceName}\n${opts.when}\nVoir : ${dash}`,
-    );
-  }
+  await sendTelegramAdmin(
+    `💈 Nouvelle réservation\n${opts.clientName} — ${opts.serviceName}\n🕒 ${opts.when}\nVoir : ${dash}`
+  );
 }
 
 export async function notifyClientReservationPending(opts: {
@@ -97,28 +91,18 @@ export async function notifyClientReservationConfirmed(opts: {
   name: string;
   serviceName: string;
   when: string;
-  phoneE164?: string | null;
 }) {
   const text = `Bonjour ${opts.name},\n\nVotre réservation pour « ${opts.serviceName} » est confirmée pour le ${opts.when}.\n\nÀ bientôt,\nL'Artiste`;
   await sendMailTo(opts.to, `L'Artiste — Réservation confirmée`, text);
-  const phone = opts.phoneE164?.replace(/\D/g, "");
-  if (phone) {
-    await sendWhatsApp(phone, text);
-  }
 }
 
 export async function notifyClientReservationRejected(opts: {
   to: string;
   name: string;
   reason?: string | null;
-  phoneE164?: string | null;
 }) {
   const text = `Bonjour ${opts.name},\n\nVotre demande de réservation n'a pas pu être acceptée.${opts.reason ? `\n\nMotif : ${opts.reason}` : ""}\n\nPour un autre créneau, passez par le site ou appelez-nous.\n\n— L'Artiste`;
   await sendMailTo(opts.to, `L'Artiste — Réservation non disponible`, text);
-  const phone = opts.phoneE164?.replace(/\D/g, "");
-  if (phone) {
-    await sendWhatsApp(phone, text.slice(0, 300));
-  }
 }
 
 export async function notifyClientRescheduled(opts: {
@@ -126,12 +110,7 @@ export async function notifyClientRescheduled(opts: {
   name: string;
   serviceName: string;
   when: string;
-  phoneE164?: string | null;
 }) {
   const text = `Bonjour ${opts.name},\n\nVotre rendez-vous pour « ${opts.serviceName} » a été replanifié au ${opts.when}.\n\n— L'Artiste`;
   await sendMailTo(opts.to, `L'Artiste — Nouveau créneau`, text);
-  const phone = opts.phoneE164?.replace(/\D/g, "");
-  if (phone) {
-    await sendWhatsApp(phone, text);
-  }
 }

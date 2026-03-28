@@ -45,7 +45,6 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       name: updated.user.name,
       serviceName: updated.service.name,
       when,
-      phoneE164: updated.user.phone,
     });
     await emitSalonUpdate();
     return NextResponse.json({ reservation: updated });
@@ -65,7 +64,6 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       to: updated.user.email,
       name: updated.user.name,
       reason: adminNote,
-      phoneE164: updated.user.phone,
     });
     await emitSalonUpdate();
     return NextResponse.json({ reservation: updated });
@@ -95,7 +93,6 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       name: updated.user.name,
       serviceName: updated.service.name,
       when,
-      phoneE164: updated.user.phone,
     });
     await emitSalonUpdate();
     return NextResponse.json({ reservation: updated });
