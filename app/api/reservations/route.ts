@@ -86,6 +86,7 @@ export async function POST(req: Request) {
   const when = new Intl.DateTimeFormat("fr-FR", {
     dateStyle: "full",
     timeStyle: "short",
+    timeZone: "Africa/Tunis",
   }).format(reservation.scheduledAt);
 
   await notifyClientReservationPending({

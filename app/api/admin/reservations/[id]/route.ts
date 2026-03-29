@@ -37,9 +37,11 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       data: { status: "CONFIRMED", adminNote: null },
       include: { user: true, service: true },
     });
-    const when = new Intl.DateTimeFormat("fr-FR", { dateStyle: "full", timeStyle: "short" }).format(
-      updated.scheduledAt,
-    );
+    const when = new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "full",
+      timeStyle: "short",
+      timeZone: "Africa/Tunis",
+    }).format(updated.scheduledAt);
     await notifyClientReservationConfirmed({
       to: updated.user.email,
       name: updated.user.name,
@@ -85,9 +87,11 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       },
       include: { user: true, service: true },
     });
-    const when = new Intl.DateTimeFormat("fr-FR", { dateStyle: "full", timeStyle: "short" }).format(
-      updated.scheduledAt,
-    );
+    const when = new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "full",
+      timeStyle: "short",
+      timeZone: "Africa/Tunis",
+    }).format(updated.scheduledAt);
     await notifyClientRescheduled({
       to: updated.user.email,
       name: updated.user.name,

@@ -12,7 +12,11 @@ export function formatPriceTND(cents: number) {
 
 export function formatTimeShort(iso: string | Date) {
   const d = typeof iso === "string" ? new Date(iso) : iso;
-  return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" }).format(d);
+  return new Intl.DateTimeFormat("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Africa/Tunis",
+  }).format(d);
 }
 
 export function formatDateTimeFr(iso: string | Date) {
@@ -20,5 +24,6 @@ export function formatDateTimeFr(iso: string | Date) {
   return new Intl.DateTimeFormat("fr-FR", {
     dateStyle: "full",
     timeStyle: "short",
+    timeZone: "Africa/Tunis",
   }).format(d);
 }

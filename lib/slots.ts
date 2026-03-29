@@ -30,8 +30,8 @@ function parseTime(dayStart: Date, hm: string) {
   return d;
 }
 
-/** Créneaux disponibles (ISO) pour une journée : max SEAT_COUNT réservations au même créneau. */
-export async function getAvailableSlotStarts(day: Date): Promise<string[]> {
+/** Créneaux disponibles (ISO) et indisponibles pour une journée : max SEAT_COUNT réservations au même créneau. */
+export async function getDaySlots(day: Date): Promise<{ time: string; available: boolean }[]> {
   const { open, close, slotMinutes } = await getBusinessHours();
   const dayStart = new Date(day);
   dayStart.setHours(0, 0, 0, 0);
@@ -39,19 +39,26 @@ export async function getAvailableSlotStarts(day: Date): Promise<string[]> {
   const closeAt = parseTime(dayStart, close);
   const step = slotMinutes * 60_000;
   const now = new Date();
-  const out: string[] = [];
+  const out: { time: string; available: boolean }[] = [];
 
   for (let t = openAt.getTime(); t + step <= closeAt.getTime(); t += step) {
     const slotStart = new Date(t);
-    if (slotStart < now) continue;
-    const slotEnd = new Date(t + step);
-    const count = await prisma.reservation.count({
-      where: {
-        status: { in: ["PENDING", "CONFIRMED", "IN_PROGRESS"] },
-        scheduledAt: { gte: slotStart, lt: slotEnd },
-      },
-    });
-    if (count < SEAT_COUNT) out.push(slotStart.toISOString());
+    let available = true;
+
+    if (slotStart < now) {
+      available = false;
+    } else {
+      const slotEnd = new Date(t + step);
+      const count = await prisma.reservation.count({
+        where: {
+          status: { in: ["PENDING", "CONFIRMED", "IN_PROGRESS"] },
+          scheduledAt: { gte: slotStart, lt: slotEnd },
+        },
+      });
+      if (count >= SEAT_COUNT) available = false;
+    }
+
+    out.push({ time: slotStart.toISOString(), available });
   }
   return out;
 }

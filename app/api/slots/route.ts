@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAvailableSlotStarts } from "@/lib/slots";
+import { getDaySlots } from "@/lib/slots";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -9,6 +9,6 @@ export async function GET(req: Request) {
   if (Number.isNaN(day.getTime())) {
     return NextResponse.json({ error: "date invalide" }, { status: 400 });
   }
-  const slots = await getAvailableSlotStarts(day);
+  const slots = await getDaySlots(day);
   return NextResponse.json({ slots });
 }

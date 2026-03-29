@@ -9,8 +9,9 @@ export function BookingPanel({ services }: { services: Service[] }) {
   const router = useRouter();
   const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
   const [day, setDay] = useState(() => new Date().toISOString().slice(0, 10));
-  const [slots, setSlots] = useState<string[]>([]);
+  const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
   const [slot, setSlot] = useState<string | null>(null);
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -22,12 +23,14 @@ export function BookingPanel({ services }: { services: Service[] }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setSlotsLoading(true);
       const r = await fetch(`/api/slots?date=${encodeURIComponent(dayIso)}`);
       const j = await r.json();
       if (!cancelled && r.ok) {
         setSlots(j.slots ?? []);
         setSlot(null);
       }
+      if (!cancelled) setSlotsLoading(false);
     })();
     return () => {
       cancelled = true;
@@ -91,21 +94,31 @@ export function BookingPanel({ services }: { services: Service[] }) {
         <div>
           <label className="text-xs uppercase tracking-wider text-white/50">Créneaux disponibles</label>
           <div className="mt-2 grid max-h-56 grid-cols-2 gap-2 overflow-auto sm:grid-cols-3">
-            {slots.length === 0 && <p className="text-sm text-white/45">Aucun créneau ce jour-là.</p>}
-            {slots.map((iso) => (
-              <button
-                key={iso}
-                type="button"
-                onClick={() => setSlot(iso)}
-                className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
-                  slot === iso
-                    ? "border-[#c9a227] bg-[#c9a227]/15 text-[#f6e7b8]"
-                    : "border-white/10 bg-black/30 text-white/80 hover:border-white/25"
-                }`}
-              >
-                {formatTimeShort(iso)}
-              </button>
-            ))}
+            {slotsLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-9 w-full animate-pulse rounded-xl bg-white/5" />
+              ))
+            ) : slots.length === 0 ? (
+              <p className="text-sm text-white/45">Aucun créneau ce jour-là.</p>
+            ) : (
+              slots.map((s) => (
+                <button
+                  key={s.time}
+                  type="button"
+                  disabled={!s.available}
+                  onClick={() => setSlot(s.time)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
+                    !s.available
+                      ? "border-transparent bg-white/5 text-white/20 cursor-not-allowed"
+                      : slot === s.time
+                        ? "border-[#c9a227] bg-[#c9a227]/15 text-[#f6e7b8]"
+                        : "border-white/10 bg-black/30 text-white/80 hover:border-white/25"
+                  }`}
+                >
+                  {formatTimeShort(s.time)}
+                </button>
+              ))
+            )}
           </div>
         </div>
         <button
