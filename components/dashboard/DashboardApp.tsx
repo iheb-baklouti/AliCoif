@@ -87,6 +87,9 @@ export function DashboardApp() {
   /* State */
   const [role, setRole] = useState<"ADMIN" | "STAFF" | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [resPage, setResPage] = useState(1);
+  const [resStatus, setResStatus] = useState("ALL");
+  const [resTotalPages, setResTotalPages] = useState(1);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -94,6 +97,8 @@ export function DashboardApp() {
   const [businessHours, setBusinessHours] = useState({ open: "09:00", close: "19:00", slotMinutes: 30 });
   const [settingsContact, setSettingsContact] = useState({ phone: "", whatsapp: "", salonAddress: "", adminEmail: "" });
   const [clientQuery, setClientQuery] = useState("");
+  const [clientsPage, setClientsPage] = useState(1);
+  const [clientsTotalPages, setClientsTotalPages] = useState(1);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [team, setTeam] = useState<TeamRow[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
@@ -128,10 +133,16 @@ export function DashboardApp() {
 
   const loadRes = useCallback(async () => {
     setLoadingRes(true);
-    const j = await fetch("/api/admin/reservations").then((r) => r.json());
+    const filters = new URLSearchParams();
+    filters.set("page", resPage.toString());
+    filters.set("limit", "15");
+    if (resStatus !== "ALL") filters.set("status", resStatus);
+
+    const j = await fetch(`/api/admin/reservations?${filters.toString()}`).then((r) => r.json());
     setReservations(j.reservations ?? []);
+    setResTotalPages(j.pages || 1);
     setLoadingRes(false);
-  }, []);
+  }, [resPage, resStatus]);
 
   const loadStats = useCallback(async () => {
     setLoadingStats(true);
@@ -142,10 +153,16 @@ export function DashboardApp() {
 
   const loadClients = useCallback(async () => {
     setLoadingClients(true);
-    const j = await fetch(`/api/admin/clients?q=${encodeURIComponent(clientQuery)}`).then((r) => r.json());
+    const filters = new URLSearchParams();
+    if (clientQuery) filters.set("q", clientQuery);
+    filters.set("page", clientsPage.toString());
+    filters.set("limit", "12");
+    
+    const j = await fetch(`/api/admin/clients?${filters.toString()}`).then((r) => r.json());
     setClients(j.clients ?? []);
+    setClientsTotalPages(j.pages || 1);
     setLoadingClients(false);
-  }, [clientQuery]);
+  }, [clientQuery, clientsPage]);
 
   const loadServices = useCallback(async () => {
     setLoadingServices(true);
@@ -415,6 +432,21 @@ export function DashboardApp() {
       {/* ── RESERVATIONS ── */}
       {tab === "res" && (
         <div className="mt-4">
+          <div className="mb-4 flex items-center gap-4">
+            <select
+              value={resStatus}
+              onChange={(e) => { setResStatus(e.target.value); setResPage(1); }}
+              className="rounded-xl border border-white/10 bg-black/40 px-3 py-1.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
+            >
+              <option value="ALL">Tous les statuts</option>
+              <option value="PENDING">En attente</option>
+              <option value="CONFIRMED">Confirmée</option>
+              <option value="IN_PROGRESS">En cours</option>
+              <option value="COMPLETED">Terminée</option>
+              <option value="CANCELLED">Annulée</option>
+              <option value="REJECTED">Refusée</option>
+            </select>
+          </div>
           {loadingRes ? <SkeletonTable rows={8} cols={5} /> : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
@@ -472,8 +504,18 @@ export function DashboardApp() {
                       </td>
                     </tr>
                   ))}
+                  {reservations.length === 0 && (
+                    <tr><td colSpan={5} className="py-8 text-center text-sm text-white/40">Aucune réservation trouvée.</td></tr>
+                  )}
                 </tbody>
               </table>
+              {resTotalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-4">
+                  <button onClick={() => setResPage(p => Math.max(1, p - 1))} disabled={resPage === 1} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Précédent</button>
+                  <span className="text-sm text-white/50">Page {resPage} sur {resTotalPages}</span>
+                  <button onClick={() => setResPage(p => Math.min(resTotalPages, p + 1))} disabled={resPage === resTotalPages} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Suivant</button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -544,27 +586,38 @@ export function DashboardApp() {
       {/* ── CLIENTS ── */}
       {tab === "clients" && (
         <div className="mt-4 space-y-4">
-          <input value={clientQuery} onChange={(e) => setClientQuery(e.target.value)}
+          <input value={clientQuery} onChange={(e) => { setClientQuery(e.target.value); setClientsPage(1); }}
             placeholder="Rechercher (nom, e-mail, téléphone)"
             className="w-full max-w-md rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           {loadingClients ? <SkeletonRows count={4} /> : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {clients.map((c) => (
-                <div key={c.id}>
-                  <button type="button" onClick={() => setSelectedClientId(selectedClientId === c.id ? null : c.id)}
-                    className="w-full text-left rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:border-[#c9a227]/30 hover:bg-white/[0.06] transition-all cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-white">{c.name}</p>
-                        <p className="text-sm text-white/50">{c.email}</p>
-                        {c.phone && <p className="text-xs text-white/35">{c.phone}</p>}
+            <div className="flex flex-col gap-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                {clients.map((c) => (
+                  <div key={c.id}>
+                    <button type="button" onClick={() => setSelectedClientId(selectedClientId === c.id ? null : c.id)}
+                      className="w-full text-left rounded-2xl border border-white/10 bg-white/[0.03] p-4 hover:border-[#c9a227]/30 hover:bg-white/[0.06] transition-all cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-white">{c.name}</p>
+                          <p className="text-sm text-white/50">{c.email}</p>
+                          {c.phone && <p className="text-xs text-white/35">{c.phone}</p>}
+                        </div>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/25 transition-transform ${selectedClientId === c.id ? "rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
                       </div>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/25 transition-transform ${selectedClientId === c.id ? "rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
-                    </div>
-                  </button>
-                  {selectedClientId === c.id && <ClientHistoryPanel clientId={c.id} onClose={() => setSelectedClientId(null)} />}
+                    </button>
+                    {selectedClientId === c.id && <ClientHistoryPanel clientId={c.id} onClose={() => setSelectedClientId(null)} />}
+                  </div>
+                ))}
+                {clients.length === 0 && <p className="text-sm text-white/40 col-span-2">Aucun client trouvé.</p>}
+              </div>
+              
+              {clientsTotalPages > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-4">
+                  <button onClick={() => setClientsPage(p => Math.max(1, p - 1))} disabled={clientsPage === 1} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Précédent</button>
+                  <span className="text-sm text-white/50">Page {clientsPage} sur {clientsTotalPages}</span>
+                  <button onClick={() => setClientsPage(p => Math.min(clientsTotalPages, p + 1))} disabled={clientsPage === clientsTotalPages} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Suivant</button>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

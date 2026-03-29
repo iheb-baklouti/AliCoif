@@ -15,16 +15,30 @@ const createSchema = z.object({
   scheduledAt: z.string().datetime(),
 });
 
-export async function GET() {
+export async function GET(req: Request) {
   const u = await requireUser();
   if ("error" in u) return u.error;
 
-  const list = await prisma.reservation.findMany({
-    where: { userId: u.session.sub },
-    include: { service: true },
-    orderBy: { scheduledAt: "desc" },
-    take: 50,
-  });
+  const { searchParams } = new URL(req.url);
+  const status = searchParams.get("status");
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "10", 10);
+  const skip = (page - 1) * limit;
+
+  const valid = ["PENDING", "CONFIRMED", "REJECTED", "IN_PROGRESS", "COMPLETED", "CANCELLED"];
+  const statusFilter = status && valid.includes(status) ? { status: status as "PENDING" | "CONFIRMED" | "REJECTED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" } : {};
+  const where = { userId: u.session.sub, ...statusFilter };
+
+  const [total, list] = await Promise.all([
+    prisma.reservation.count({ where }),
+    prisma.reservation.findMany({
+      where,
+      include: { service: true },
+      orderBy: { scheduledAt: "desc" },
+      skip,
+      take: limit,
+    })
+  ]);
 
   const enriched = await Promise.all(
     list.map(async (r) => {
@@ -37,7 +51,12 @@ export async function GET() {
     }),
   );
 
-  return NextResponse.json({ reservations: enriched });
+  return NextResponse.json({ 
+    reservations: enriched,
+    total,
+    pages: Math.ceil(total / limit),
+    page,
+  });
 }
 
 export async function POST(req: Request) {

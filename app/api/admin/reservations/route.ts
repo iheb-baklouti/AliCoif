@@ -23,12 +23,25 @@ export async function GET(req: Request) {
         }
       : {};
 
-  const reservations = await prisma.reservation.findMany({
-    where,
-    include: { user: true, service: true },
-    orderBy: { scheduledAt: "desc" },
-    take: 200,
-  });
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "10", 10);
+  const skip = (page - 1) * limit;
 
-  return NextResponse.json({ reservations });
+  const [total, reservations] = await Promise.all([
+    prisma.reservation.count({ where }),
+    prisma.reservation.findMany({
+      where,
+      include: { user: true, service: true },
+      orderBy: { scheduledAt: "desc" },
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  return NextResponse.json({
+    reservations,
+    total,
+    pages: Math.ceil(total / limit),
+    page,
+  });
 }

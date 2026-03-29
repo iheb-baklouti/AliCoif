@@ -33,6 +33,9 @@ export default function ComptePage() {
   const [phone, setPhone] = useState("");
   const [prefs, setPrefs] = useState("");
   const [list, setList] = useState<Reservation[]>([]);
+  const [resPage, setResPage] = useState(1);
+  const [resStatus, setResStatus] = useState("ALL");
+  const [resTotalPages, setResTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [curPwd, setCurPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
@@ -43,6 +46,7 @@ export default function ComptePage() {
   const [reviewMsg, setReviewMsg] = useState("");
   const [savingReview, setSavingReview] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   async function load() {
     const me = await fetch("/api/auth/me").then((r) => r.json());
     if (!me.user) {
@@ -53,15 +57,22 @@ export default function ComptePage() {
     setEmail(me.user.email);
     setPhone(me.user.phone || "");
     setPrefs(me.user.preferences || "");
-    const r = await fetch("/api/reservations");
+
+    const filters = new URLSearchParams();
+    filters.set("page", resPage.toString());
+    filters.set("limit", "5");
+    if (resStatus !== "ALL") filters.set("status", resStatus);
+
+    const r = await fetch(`/api/reservations?${filters.toString()}`);
     const j = await r.json();
     setList(j.reservations ?? []);
+    setResTotalPages(j.pages || 1);
     setLoading(false);
   }
 
   useEffect(() => {
     load();
-  }, [router]);
+  }, [router, resPage, resStatus]);
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -240,7 +251,22 @@ export default function ComptePage() {
       </div>
 
       <div className="mt-12">
-        <h2 className="text-lg font-semibold text-white">Mes réservations</h2>
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+          <h2 className="text-lg font-semibold text-white">Mes réservations</h2>
+          <select
+            value={resStatus}
+            onChange={(e) => { setResStatus(e.target.value); setResPage(1); }}
+            className="rounded-xl border border-white/10 bg-black/40 px-3 py-1.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
+          >
+            <option value="ALL">Tous les statuts</option>
+            <option value="PENDING">En attente</option>
+            <option value="CONFIRMED">Confirmée</option>
+            <option value="IN_PROGRESS">En cours</option>
+            <option value="COMPLETED">Terminée</option>
+            <option value="CANCELLED">Annulée</option>
+            <option value="REJECTED">Refusée</option>
+          </select>
+        </div>
         <div className="mt-4 space-y-3">
           {list.length === 0 && <p className="text-sm text-white/50">Aucune réservation pour le moment.</p>}
           {list.map((r) => (
@@ -276,6 +302,13 @@ export default function ComptePage() {
               )}
             </div>
           ))}
+          {resTotalPages > 1 && (
+            <div className="mt-6 flex items-center justify-center gap-4">
+              <button onClick={() => setResPage(p => Math.max(1, p - 1))} disabled={resPage === 1} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Précédent</button>
+              <span className="text-sm text-white/50">Page {resPage} sur {resTotalPages}</span>
+              <button onClick={() => setResPage(p => Math.min(resTotalPages, p + 1))} disabled={resPage === resTotalPages} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Suivant</button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -9,22 +9,37 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim();
 
-  const users = await prisma.user.findMany({
-    where: q
-      ? {
-          OR: [
-            { name: { contains: q } },
-            { email: { contains: q } },
-            { phone: { contains: q } },
-          ],
-        }
-      : {},
-    include: {
-      _count: { select: { reservations: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "12", 10);
+  const skip = (page - 1) * limit;
 
-  return NextResponse.json({ clients: users });
+  const where = q
+    ? {
+        OR: [
+          { name: { contains: q } },
+          { email: { contains: q, mode: "insensitive" as const } },
+          { phone: { contains: q } },
+        ],
+      }
+    : {};
+
+  const [total, users] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({
+      where,
+      include: {
+        _count: { select: { reservations: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  return NextResponse.json({
+    clients: users,
+    total,
+    pages: Math.ceil(total / limit),
+    page,
+  });
 }

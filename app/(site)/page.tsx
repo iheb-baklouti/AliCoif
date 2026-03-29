@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatPriceTND } from "@/lib/format";
 import { SalonSeats } from "@/components/SalonSeats";
+import { ReviewCarousel } from "@/components/ReviewCarousel";
 
 export const dynamic = "force-dynamic";
 
@@ -142,19 +143,7 @@ export default async function Home() {
 
       <section className="mx-auto max-w-6xl px-4 py-16">
         <h2 className="font-[family-name:var(--font-display)] text-4xl text-white">Témoignages</h2>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {reviews.map((r) => (
-            <blockquote
-              key={r.id}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-white/80"
-            >
-              <p className="text-sm leading-relaxed">&ldquo;{r.text}&rdquo;</p>
-              <footer className="mt-4 text-xs font-semibold text-[#c9a227]">
-                {r.authorName} — {r.rating}/5
-              </footer>
-            </blockquote>
-          ))}
-        </div>
+        <ReviewCarousel reviews={reviews} />
       </section>
     </div>
   );
