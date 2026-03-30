@@ -35,16 +35,18 @@ export default function ContactPage() {
       <div className="mt-12 grid gap-10 lg:grid-cols-2">
         <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
           <div>
-            <label className="text-xs uppercase tracking-wider text-white/50">Nom</label>
+            <label htmlFor="contact-name" className="text-xs uppercase tracking-wider text-white/50">Nom</label>
             <input
+              id="contact-name"
               name="name"
               required
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none ring-[#c9a227]/0 transition focus:ring-2 focus:ring-[#c9a227]/40"
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wider text-white/50">E-mail</label>
+            <label htmlFor="contact-email" className="text-xs uppercase tracking-wider text-white/50">E-mail</label>
             <input
+              id="contact-email"
               name="email"
               type="email"
               required
@@ -52,15 +54,17 @@ export default function ContactPage() {
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wider text-white/50">Téléphone</label>
+            <label htmlFor="contact-phone" className="text-xs uppercase tracking-wider text-white/50">Téléphone</label>
             <input
+              id="contact-phone"
               name="phone"
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wider text-white/50">Message</label>
+            <label htmlFor="contact-message" className="text-xs uppercase tracking-wider text-white/50">Message</label>
             <textarea
+              id="contact-message"
               name="message"
               required
               rows={5}

@@ -79,8 +79,9 @@ export default function InscriptionPage() {
         )}
 
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">Nom complet</label>
+          <label htmlFor="reg-name" className="text-xs uppercase tracking-wider text-white/50">Nom complet</label>
           <input
+            id="reg-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -88,8 +89,9 @@ export default function InscriptionPage() {
           />
         </div>
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">E-mail</label>
+          <label htmlFor="reg-email" className="text-xs uppercase tracking-wider text-white/50">E-mail</label>
           <input
+            id="reg-email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
@@ -98,16 +100,18 @@ export default function InscriptionPage() {
           />
         </div>
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">Téléphone (optionnel)</label>
+          <label htmlFor="reg-phone" className="text-xs uppercase tracking-wider text-white/50">Téléphone (optionnel)</label>
           <input
+            id="reg-phone"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
           />
         </div>
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">Mot de passe</label>
+          <label htmlFor="reg-password" className="text-xs uppercase tracking-wider text-white/50">Mot de passe</label>
           <input
+            id="reg-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"

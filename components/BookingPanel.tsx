@@ -69,8 +69,9 @@ export function BookingPanel({ services }: { services: Service[] }) {
       <h2 className="text-lg font-semibold text-white">Réservation de Soin</h2>
       <div className="mt-6 space-y-4">
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">Service</label>
+          <label htmlFor="service-select" className="text-xs uppercase tracking-wider text-white/50">Service</label>
           <select
+            id="service-select"
             value={serviceId}
             onChange={(e) => setServiceId(e.target.value)}
             className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
@@ -83,8 +84,9 @@ export function BookingPanel({ services }: { services: Service[] }) {
           </select>
         </div>
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">Jour</label>
+          <label htmlFor="date-input" className="text-xs uppercase tracking-wider text-white/50">Jour</label>
           <input
+            id="date-input"
             type="date"
             value={day}
             onChange={(e) => setDay(e.target.value)}

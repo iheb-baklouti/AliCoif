@@ -44,9 +44,6 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     siteName: "L'Artiste by Ali Chakroun",
   },
-  alternates: {
-    canonical: "/",
-  },
   twitter: {
     card: "summary_large_image",
     title: "L'Artiste by Ali Chakroun — Kairouan",

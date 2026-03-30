@@ -25,6 +25,18 @@ const nextConfig: NextConfig = {
             value: "max-age=31536000; includeSubDomains; preload",
           },
           {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://accounts.google.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: https://* blob:",
+              "font-src 'self' https://fonts.gstatic.com",
+              "frame-src https://accounts.google.com",
+              "connect-src 'self' https://api.telegram.org https://www.google-analytics.com",
+            ].join("; "),
+          },
+          {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },

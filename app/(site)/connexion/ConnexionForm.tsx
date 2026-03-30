@@ -80,8 +80,9 @@ export function ConnexionForm() {
         )}
         
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">E-mail</label>
+          <label htmlFor="login-email" className="text-xs uppercase tracking-wider text-white/50">E-mail</label>
           <input
+            id="login-email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
@@ -90,8 +91,9 @@ export function ConnexionForm() {
           />
         </div>
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">Mot de passe</label>
+          <label htmlFor="login-password" className="text-xs uppercase tracking-wider text-white/50">Mot de passe</label>
           <input
+            id="login-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
