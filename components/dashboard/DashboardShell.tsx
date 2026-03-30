@@ -66,11 +66,19 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   if (!me) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#070707] text-white/60">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#c9a227] border-t-transparent" />
-          <p className="text-sm">Chargement…</p>
-        </div>
+      <div className="flex min-h-screen bg-[#070707] text-white/70">
+        <aside className="hidden w-64 border-r border-white/10 bg-[#050505] lg:flex flex-col p-5 space-y-6">
+          <div className="h-8 w-32 animate-pulse rounded bg-white/5" />
+          <div className="space-y-3">
+            {[1,2,3,4].map(i => <div key={i} className="h-10 w-full animate-pulse rounded-xl bg-white/5" />)}
+          </div>
+        </aside>
+        <main className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#c9a227] border-t-transparent" />
+            <p className="text-sm">Chargement du dashboard…</p>
+          </div>
+        </main>
       </div>
     );
   }
@@ -91,7 +99,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-all cursor-pointer ${
           active
             ? "bg-[#c9a227]/20 text-[#f0e6b8]"
-            : "text-white/60 hover:bg-white/5 hover:text-white/90"
+            : "text-white/70 hover:bg-white/5 hover:text-white/90"
         }`}
       >
         <NavIcon path={l.icon} />
@@ -105,7 +113,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Brand */}
       <div className="border-b border-white/10 px-5 py-5">
         <p className="font-[family-name:var(--font-display)] text-2xl text-[#c9a227]">L&apos;Artiste</p>
-        <p className="mt-0.5 text-[10px] uppercase tracking-[0.3em] text-white/30">
+        <p className="mt-0.5 text-[10px] uppercase tracking-[0.3em] text-white/50">
           {isStaff ? "Staff" : "Administration"}
         </p>
         <div className="mt-3 flex items-center gap-2.5">
@@ -114,7 +122,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-white/90">{me.name}</p>
-            {isStaff && <p className="text-xs text-white/40">Siège {me.seatNumber ?? "—"}</p>}
+            {isStaff && <p className="text-xs text-white/60">Siège {me.seatNumber ?? "—"}</p>}
           </div>
         </div>
       </div>
@@ -143,7 +151,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <button
           type="button"
           onClick={logout}
-          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs text-white/40 hover:bg-white/5 hover:text-white/70 transition-colors cursor-pointer"
+          aria-label="Se déconnecter"
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs text-white/60 hover:bg-white/5 hover:text-white/80 transition-colors cursor-pointer"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
@@ -196,7 +205,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div className="flex-1">{children}</div>
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
       </div>
 
       <ToastContainer />

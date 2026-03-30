@@ -46,9 +46,9 @@ function KpiCard({ label, value, sub, gold, icon }: { label: string; value: stri
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex items-start gap-4">
       {icon && <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.06]">{icon}</div>}
       <div>
-        <p className="text-[11px] uppercase tracking-wider text-white/40">{label}</p>
+        <p className="text-[11px] uppercase tracking-wider text-white/60">{label}</p>
         <p className={`mt-1 text-2xl font-bold ${gold ? "text-[#c9a227]" : "text-white"}`}>{value}</p>
-        {sub && <p className="mt-0.5 text-[11px] text-white/30">{sub}</p>}
+        {sub && <p className="mt-0.5 text-[11px] text-white/50">{sub}</p>}
       </div>
     </div>
   );
@@ -403,12 +403,12 @@ export function DashboardApp() {
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
               {(snapshot?.seats ?? []).map((s) => (
                 <div key={s.seatNumber} className={`rounded-xl border px-4 py-3 ${s.status === "occupied" ? "border-[#c9a227]/30 bg-[#c9a227]/5" : "border-white/10 bg-black/20"}`}>
-                  <p className="text-[10px] uppercase tracking-wider text-white/35">Siège {s.seatNumber}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-white/60">Siège {s.seatNumber}</p>
                   <p className="mt-1 text-sm font-medium text-white truncate">{s.status === "occupied" ? s.clientName : "Libre"}</p>
                   {s.remainingMinutes != null && <p className="text-[11px] text-[#c9a227]">~ {s.remainingMinutes} min</p>}
                 </div>
               ))}
-              {(!snapshot?.seats || snapshot.seats.length === 0) && <p className="text-sm text-white/30 col-span-5">Chargement…</p>}
+              {(!snapshot?.seats || snapshot.seats.length === 0) && <p className="text-sm text-white/50 col-span-5">Chargement…</p>}
             </div>
           </div>
 
@@ -464,7 +464,7 @@ export function DashboardApp() {
                     <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                       <td className="py-3 pr-4">
                         <p className="font-medium">{r.user.name}</p>
-                        <p className="text-xs text-white/40">{r.user.email}</p>
+                        <p className="text-xs text-white/55">{r.user.email}</p>
                       </td>
                       <td className="py-3 pr-4">{r.service.name}</td>
                       <td className="py-3 pr-4 whitespace-nowrap text-xs">{formatDateTimeFr(r.scheduledAt)}</td>
@@ -511,9 +511,9 @@ export function DashboardApp() {
               </table>
               {resTotalPages > 1 && (
                 <div className="mt-6 flex items-center justify-center gap-4">
-                  <button onClick={() => setResPage(p => Math.max(1, p - 1))} disabled={resPage === 1} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Précédent</button>
-                  <span className="text-sm text-white/50">Page {resPage} sur {resTotalPages}</span>
-                  <button onClick={() => setResPage(p => Math.min(resTotalPages, p + 1))} disabled={resPage === resTotalPages} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Suivant</button>
+                  <button onClick={() => setResPage(p => Math.max(1, p - 1))} disabled={resPage === 1} aria-label="Page précédente" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Précédent</button>
+                  <span className="text-sm text-white/60">Page {resPage} sur {resTotalPages}</span>
+                  <button onClick={() => setResPage(p => Math.min(resTotalPages, p + 1))} disabled={resPage === resTotalPages} aria-label="Page suivante" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Suivant</button>
                 </div>
               )}
             </div>
@@ -537,8 +537,8 @@ export function DashboardApp() {
                     </div>
                   </div>
                   <div className="mt-4 flex gap-8 text-sm">
-                    <div><p className="text-[11px] uppercase tracking-wider text-white/35">Ce mois</p><p className="text-xl font-bold text-[#c9a227] mt-0.5">{t.completedThisMonth}</p></div>
-                    <div><p className="text-[11px] uppercase tracking-wider text-white/35">Total</p><p className="text-xl font-bold text-white mt-0.5">{t.completedTotal}</p></div>
+                    <div><p className="text-[11px] uppercase tracking-wider text-white/50">Ce mois</p><p className="text-xl font-bold text-[#c9a227] mt-0.5">{t.completedThisMonth}</p></div>
+                    <div><p className="text-[11px] uppercase tracking-wider text-white/50">Total</p><p className="text-xl font-bold text-white mt-0.5">{t.completedTotal}</p></div>
                   </div>
                 </div>
               ))}
@@ -566,7 +566,7 @@ export function DashboardApp() {
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#c9a227]/15 text-sm font-bold text-[#c9a227]">{m.name.charAt(0)}</div>
                     <div>
                       <p className="font-semibold text-white">{m.name}</p>
-                      <p className="text-sm text-white/50">{m.email}{m.phone ? ` • ${m.phone}` : ""} • Siège {m.seatNumber ?? "—"}</p>
+                      <p className="text-sm text-white/60">{m.email}{m.phone ? ` • ${m.phone}` : ""} • Siège {m.seatNumber ?? "—"}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -599,10 +599,10 @@ export function DashboardApp() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-semibold text-white">{c.name}</p>
-                          <p className="text-sm text-white/50">{c.email}</p>
-                          {c.phone && <p className="text-xs text-white/35">{c.phone}</p>}
+                          <p className="text-sm text-white/60">{c.email}</p>
+                          {c.phone && <p className="text-xs text-white/50">{c.phone}</p>}
                         </div>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/25 transition-transform ${selectedClientId === c.id ? "rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={`text-white/40 transition-transform ${selectedClientId === c.id ? "rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"/></svg>
                       </div>
                     </button>
                     {selectedClientId === c.id && <ClientHistoryPanel clientId={c.id} onClose={() => setSelectedClientId(null)} />}
@@ -613,9 +613,9 @@ export function DashboardApp() {
               
               {clientsTotalPages > 1 && (
                 <div className="mt-4 flex items-center justify-center gap-4">
-                  <button onClick={() => setClientsPage(p => Math.max(1, p - 1))} disabled={clientsPage === 1} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Précédent</button>
-                  <span className="text-sm text-white/50">Page {clientsPage} sur {clientsTotalPages}</span>
-                  <button onClick={() => setClientsPage(p => Math.min(clientsTotalPages, p + 1))} disabled={clientsPage === clientsTotalPages} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Suivant</button>
+                  <button onClick={() => setClientsPage(p => Math.max(1, p - 1))} disabled={clientsPage === 1} aria-label="Page précédente" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Précédent</button>
+                  <span className="text-sm text-white/60">Page {clientsPage} sur {clientsTotalPages}</span>
+                  <button onClick={() => setClientsPage(p => Math.min(clientsTotalPages, p + 1))} disabled={clientsPage === clientsTotalPages} aria-label="Page suivante" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 disabled:opacity-30 transition-all cursor-pointer">Suivant</button>
                 </div>
               )}
             </div>
@@ -644,9 +644,9 @@ export function DashboardApp() {
                       </div>
                       <div>
                         <p className="font-semibold text-white">{s.name}
-                          {!s.active && <span className="ml-2 text-[10px] uppercase tracking-wider text-white/30 border border-white/10 rounded-full px-1.5 py-0.5">inactif</span>}
+                          {!s.active && <span className="ml-2 text-[10px] uppercase tracking-wider text-white/50 border border-white/10 rounded-full px-1.5 py-0.5">inactif</span>}
                         </p>
-                        <p className="text-sm text-white/50">
+                        <p className="text-sm text-white/60">
                           {(s.priceCents / 100).toFixed(2)} TND • {s.durationMinutes} min
                           {s.category && ` • ${s.category}`}
                         </p>
@@ -659,7 +659,7 @@ export function DashboardApp() {
                         className="rounded-full border border-red-400/30 px-3 py-1.5 text-xs text-red-200 hover:bg-red-500/10 active:scale-95 cursor-pointer transition-all">Supprimer</button>
                     </div>
                   </div>
-                  {s.description && <p className="mt-2 text-xs text-white/40 ml-[52px]">{s.description}</p>}
+                  {s.description && <p className="mt-2 text-xs text-white/60 ml-[52px]">{s.description}</p>}
                 </div>
               ))}
               {services.length === 0 && <p className="text-sm text-white/40">Aucun service configuré.</p>}
@@ -697,11 +697,11 @@ export function DashboardApp() {
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-white">{r.authorName}</p>
                         <span className="text-xs text-[#c9a227]">{"★".repeat(r.rating)}</span>
-                        <span className={`rounded-full border px-1.5 py-0.5 text-[10px] ${r.published ? "border-emerald-500/30 text-emerald-300" : "border-white/10 text-white/40"}`}>
+                        <span className={`rounded-full border px-1.5 py-0.5 text-[10px] ${r.published ? "border-emerald-500/30 text-emerald-300" : "border-white/10 text-white/60"}`}>
                           {r.published ? "Publié" : "Masqué"}
                         </span>
                       </div>
-                      <p className="mt-1 text-sm text-white/65">{r.text}</p>
+                      <p className="mt-1 text-sm text-white/70">{r.text}</p>
                     </div>
                     <div className="flex shrink-0 gap-2">
                       <button type="button" onClick={() => toggleReview(r.id, !r.published)}
@@ -726,17 +726,17 @@ export function DashboardApp() {
             <h2 className="text-base font-semibold text-white">Horaires &amp; créneaux</h2>
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <label className="text-xs uppercase tracking-wider text-white/50">Ouverture</label>
+                <label className="text-xs uppercase tracking-wider text-white/60">Ouverture</label>
                 <input value={businessHours.open} onChange={(e) => setBusinessHours((h) => ({ ...h, open: e.target.value }))}
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-white/50">Fermeture</label>
+                <label className="text-xs uppercase tracking-wider text-white/60">Fermeture</label>
                 <input value={businessHours.close} onChange={(e) => setBusinessHours((h) => ({ ...h, close: e.target.value }))}
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-white/50">Créneau (min)</label>
+                <label className="text-xs uppercase tracking-wider text-white/60">Créneau (min)</label>
                 <input type="number" min={10} max={120} value={businessHours.slotMinutes}
                   onChange={(e) => setBusinessHours((h) => ({ ...h, slotMinutes: Number(e.target.value) || 30 }))}
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
@@ -747,25 +747,25 @@ export function DashboardApp() {
             <h2 className="text-base font-semibold text-white">Contact &amp; adresse</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="text-xs uppercase tracking-wider text-white/50">Téléphone</label>
+                <label className="text-xs uppercase tracking-wider text-white/60">Téléphone</label>
                 <input value={settingsContact.phone} onChange={(e) => setSettingsContact((s) => ({ ...s, phone: e.target.value }))}
                   placeholder="+216 XX XXX XXX"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
               </div>
               <div>
-                <label className="text-xs uppercase tracking-wider text-white/50">WhatsApp</label>
+                <label className="text-xs uppercase tracking-wider text-white/60">WhatsApp</label>
                 <input value={settingsContact.whatsapp} onChange={(e) => setSettingsContact((s) => ({ ...s, whatsapp: e.target.value }))}
                   placeholder="+21620392769"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs uppercase tracking-wider text-white/50">Adresse du salon</label>
+                <label className="text-xs uppercase tracking-wider text-white/60">Adresse du salon</label>
                 <input value={settingsContact.salonAddress} onChange={(e) => setSettingsContact((s) => ({ ...s, salonAddress: e.target.value }))}
                   placeholder="Rue Ibn Khaldoun, Kairouan"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs uppercase tracking-wider text-white/50">E-mail admin</label>
+                <label className="text-xs uppercase tracking-wider text-white/60">E-mail admin</label>
                 <input type="email" value={settingsContact.adminEmail} onChange={(e) => setSettingsContact((s) => ({ ...s, adminEmail: e.target.value }))}
                   placeholder="admin@salon.tn"
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />

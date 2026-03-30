@@ -101,8 +101,9 @@ export function StaffModal({ mode, initial, targetName, onConfirm, onClose }: Pr
             <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium uppercase tracking-wider text-white/50 mb-1.5">Nom complet *</label>
+                  <label htmlFor="staff-name" className="block text-xs font-medium uppercase tracking-wider text-white/60 mb-1.5">Nom complet *</label>
                   <input
+                    id="staff-name"
                     required
                     value={form.name}
                     onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
@@ -111,8 +112,9 @@ export function StaffModal({ mode, initial, targetName, onConfirm, onClose }: Pr
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium uppercase tracking-wider text-white/50 mb-1.5">Siège</label>
+                  <label htmlFor="staff-seat" className="block text-xs font-medium uppercase tracking-wider text-white/60 mb-1.5">Siège</label>
                   <select
+                    id="staff-seat"
                     value={form.seatNumber}
                     onChange={(e) => setForm((s) => ({ ...s, seatNumber: Number(e.target.value) }))}
                     className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-[#c9a227]/50 focus:ring-2 focus:ring-[#c9a227]/20 transition cursor-pointer"
@@ -124,8 +126,9 @@ export function StaffModal({ mode, initial, targetName, onConfirm, onClose }: Pr
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium uppercase tracking-wider text-white/50 mb-1.5">E-mail *</label>
+                <label htmlFor="staff-email" className="block text-xs font-medium uppercase tracking-wider text-white/60 mb-1.5">E-mail *</label>
                 <input
+                  id="staff-email"
                   required
                   type="email"
                   value={form.email}
@@ -135,8 +138,9 @@ export function StaffModal({ mode, initial, targetName, onConfirm, onClose }: Pr
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium uppercase tracking-wider text-white/50 mb-1.5">Téléphone</label>
+                <label htmlFor="staff-phone" className="block text-xs font-medium uppercase tracking-wider text-white/60 mb-1.5">Téléphone</label>
                 <input
+                  id="staff-phone"
                   value={form.phone}
                   onChange={(e) => setForm((s) => ({ ...s, phone: e.target.value }))}
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/25 focus:border-[#c9a227]/50 focus:ring-2 focus:ring-[#c9a227]/20 transition"
@@ -144,10 +148,11 @@ export function StaffModal({ mode, initial, targetName, onConfirm, onClose }: Pr
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium uppercase tracking-wider text-white/50 mb-1.5">
+                <label htmlFor="staff-password" className="block text-xs font-medium uppercase tracking-wider text-white/60 mb-1.5">
                   {mode === "edit" ? "Nouveau mot de passe (laisser vide pour conserver)" : "Mot de passe *"}
                 </label>
                 <input
+                  id="staff-password"
                   required={mode === "add"}
                   type="password"
                   minLength={mode === "add" ? 6 : undefined}

@@ -65,10 +65,11 @@ export function AdminMediaPanel() {
         className="max-w-2xl space-y-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6"
       >
         <h2 className="text-lg font-semibold text-white">Ajouter une image</h2>
-        <p className="text-xs text-white/50">JPG, PNG, WebP ou GIF — max 5 Mo. Stockage : /public/uploads/</p>
+        <p className="text-xs text-white/60">JPG, PNG, WebP ou GIF — max 5 Mo. Stockage : /public/uploads/</p>
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">Fichier</label>
+          <label htmlFor="media-file" className="text-xs uppercase tracking-wider text-white/60">Fichier</label>
           <input
+            id="media-file"
             name="file"
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif"
@@ -78,8 +79,9 @@ export function AdminMediaPanel() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="text-xs uppercase tracking-wider text-white/50">Usage</label>
+            <label htmlFor="media-kind" className="text-xs uppercase tracking-wider text-white/60">Usage</label>
             <select
+              id="media-kind"
               name="kind"
               defaultValue="GALLERY"
               className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
@@ -90,8 +92,9 @@ export function AdminMediaPanel() {
             </select>
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wider text-white/50">Ordre (0 = premier)</label>
+            <label htmlFor="media-order" className="text-xs uppercase tracking-wider text-white/60">Ordre (0 = premier)</label>
             <input
+              id="media-order"
               name="sortOrder"
               type="number"
               defaultValue={0}
@@ -100,8 +103,9 @@ export function AdminMediaPanel() {
           </div>
         </div>
         <div>
-          <label className="text-xs uppercase tracking-wider text-white/50">Texte alternatif (SEO)</label>
+          <label htmlFor="media-alt" className="text-xs uppercase tracking-wider text-white/60">Texte alternatif (SEO)</label>
           <input
+            id="media-alt"
             name="alt"
             placeholder="Description courte"
             className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40"
@@ -119,7 +123,7 @@ export function AdminMediaPanel() {
 
       <div>
         <h2 className="text-lg font-semibold text-white">Bibliothèque</h2>
-        <p className="mt-1 text-xs text-white/50">
+        <p className="mt-1 text-xs text-white/60">
           Les images « Accueil » et « Équipe » sont triées par ordre. Les fichiers dans /public/ (ex. salon-facade.png)
           ne sont pas supprimés du disque si vous retirez seulement la ligne en base — supprimez-les à la main si
           besoin.
@@ -161,7 +165,7 @@ export function AdminMediaPanel() {
                   placeholder="Alt"
                   className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-xs text-white"
                 />
-                <p className="truncate text-[10px] text-white/35">{m.url}</p>
+                <p className="truncate text-[10px] text-white/50">{m.url}</p>
                 <button
                   type="button"
                   onClick={() => remove(m.id)}

@@ -102,23 +102,23 @@ export function DashboardCompte() {
         <h2 className="text-base font-semibold text-white">Informations personnelles</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Nom</label>
-            <input value={name} onChange={(e) => setName(e.target.value)}
+            <label htmlFor="profile-name" className="block text-xs uppercase tracking-wider text-white/60 mb-1.5">Nom</label>
+            <input id="profile-name" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">E-mail</label>
-            <input value={me.email} readOnly
-              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/50" />
+            <label htmlFor="profile-email" className="block text-xs uppercase tracking-wider text-white/60 mb-1.5">E-mail</label>
+            <input id="profile-email" value={me.email} readOnly
+              className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/60" />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Téléphone</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+216 XX XXX XXX"
+            <label htmlFor="profile-phone" className="block text-xs uppercase tracking-wider text-white/60 mb-1.5">Téléphone</label>
+            <input id="profile-phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+216 XX XXX XXX"
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Préférences</label>
-            <input value={prefs} onChange={(e) => setPrefs(e.target.value)} placeholder="Style, produits, allergies…"
+            <label htmlFor="profile-prefs" className="block text-xs uppercase tracking-wider text-white/60 mb-1.5">Préférences</label>
+            <input id="profile-prefs" value={prefs} onChange={(e) => setPrefs(e.target.value)} placeholder="Style, produits, allergies…"
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
         </div>
@@ -133,13 +133,13 @@ export function DashboardCompte() {
         <h2 className="text-base font-semibold text-white">Changer le mot de passe</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Mot de passe actuel</label>
-            <input type="password" value={curPwd} onChange={(e) => setCurPwd(e.target.value)} required
+            <label htmlFor="pwd-current" className="block text-xs uppercase tracking-wider text-white/60 mb-1.5">Mot de passe actuel</label>
+            <input id="pwd-current" type="password" value={curPwd} onChange={(e) => setCurPwd(e.target.value)} required
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-wider text-white/50 mb-1.5">Nouveau mot de passe</label>
-            <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} required minLength={6}
+            <label htmlFor="pwd-new" className="block text-xs uppercase tracking-wider text-white/60 mb-1.5">Nouveau mot de passe</label>
+            <input id="pwd-new" type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} required minLength={6}
               className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#c9a227]/40" />
           </div>
         </div>
