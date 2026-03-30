@@ -13,9 +13,9 @@ export default async function ServicesPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-16">
       <div className="max-w-2xl">
-        <h1 className="font-[family-name:var(--font-display)] text-5xl text-white">Services &amp; tarifs</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-5xl text-white">Nos Soins Exclusifs</h1>
         <p className="mt-4 text-lg text-white/65">
-          Une carte pensée pour hommes et femmes : coupes, couleur, soins et finitions premium.
+          Chaque prestation est un rituel de précision. De la coupe classique au soin de barbe traditionnel, découvrez l&apos;excellence du savoir-faire L&apos;Artiste pour une allure impeccable au quotidien.
         </p>
       </div>
       <div className="mt-12 grid gap-4 md:grid-cols-2">

@@ -65,13 +65,15 @@ export function ReviewCarousel({ reviews }: { reviews: Review[] }) {
       {/* Scroll Buttons (visible on hover/focus matching desktop interaction) */}
       <button 
         onClick={() => scrollBy(-300)}
-        className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-black/80 border border-white/10 p-2 rounded-full text-white/80 hover:text-white transition-opacity ${canScrollLeft ? "opacity-0 md:group-hover:opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-label="Avis précédents"
+        className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-black/80 border border-white/10 p-2 rounded-full text-white/80 hover:text-white transition-opacity focus:outline-white ${canScrollLeft ? "opacity-0 md:group-hover:opacity-100 focus:opacity-100" : "opacity-0 pointer-events-none"}`}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <button 
         onClick={() => scrollBy(300)}
-        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-black/80 border border-white/10 p-2 rounded-full text-white/80 hover:text-white transition-opacity ${canScrollRight ? "opacity-0 md:group-hover:opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-label="Avis suivants"
+        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-black/80 border border-white/10 p-2 rounded-full text-white/80 hover:text-white transition-opacity focus:outline-white ${canScrollRight ? "opacity-0 md:group-hover:opacity-100 focus:opacity-100" : "opacity-0 pointer-events-none"}`}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>

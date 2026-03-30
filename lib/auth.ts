@@ -72,7 +72,7 @@ export async function setAuthCookie(token: string) {
   const jar = await cookies();
   jar.set(COOKIE, token, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,

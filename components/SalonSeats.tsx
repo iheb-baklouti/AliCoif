@@ -8,13 +8,13 @@ export function SalonSeats() {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-white">Sièges en direct</h3>
+        <h3 className="text-lg font-semibold text-white">Disponibilité des Postes</h3>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${
             connected ? "bg-emerald-500/20 text-emerald-300" : "bg-amber-500/15 text-amber-200"
           }`}
         >
-          {connected ? "Temps réel" : "Reconnexion…"}
+          {connected ? "Temps réel" : "Synchronisation…"}
         </span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -35,7 +35,7 @@ export function SalonSeats() {
           >
             <p className="text-xs uppercase tracking-wider text-white/50">Siège {s.seatNumber}</p>
             <p className="mt-2 text-sm font-semibold text-white">
-              {s.status === "occupied" ? s.clientName : "Disponible"}
+              {s.status === "occupied" ? s.clientName : "Poste Libre"}
             </p>
             {s.status === "occupied" && s.remainingMinutes != null && (
               <p className="mt-1 text-xs text-[#c9a227]">≈ {s.remainingMinutes} min restantes</p>

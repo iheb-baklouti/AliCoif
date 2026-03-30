@@ -5,7 +5,7 @@ import { formatPriceTND } from "@/lib/format";
 import { SalonSeats } from "@/components/SalonSeats";
 import { ReviewCarousel } from "@/components/ReviewCarousel";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const FALLBACK_HERO = [
   { url: "/salon-facade.png", alt: "Façade du salon L'Artiste" },
@@ -52,14 +52,13 @@ export default async function Home() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
           <div className="animate-fade-up">
             <p className="text-sm font-semibold uppercase tracking-[0.35em] text-[#c9a227]">
-              Barbier &amp; coiffure hommes
+              Excellence &amp; Tradition — Haute Coiffure pour Hommes
             </p>
             <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl leading-tight text-white md:text-6xl">
               L&apos;Artiste
             </h1>
             <p className="mt-4 max-w-md text-lg text-white/70">
-              Salon réservé aux hommes — noir &amp; or, coupes nettes, barbe et forfaits premium à Kairouan. Demande de
-              réservation en ligne, validation par le salon.
+              Sublimez votre style dans l&apos;univers de L&apos;Artiste. Un sanctuaire dédié à l&apos;homme moderne à Kairouan, où la maîtrise technique rencontre l&apos;élégance du design noir &amp; or. Précision de coupe, rituels de barbe et soins d&apos;exception.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
@@ -107,8 +106,8 @@ export default async function Home() {
       <section className="mx-auto max-w-6xl px-4 py-16">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="font-[family-name:var(--font-display)] text-4xl text-white">Services phares</h2>
-            <p className="mt-2 text-white/60">Tarifs indicatifs — salon hommes.</p>
+            <h2 className="font-[family-name:var(--font-display)] text-4xl text-white">Sélection de soins</h2>
+            <p className="mt-2 text-white/60">Une gamme exclusive de prestations signées Ali Chakroun.</p>
           </div>
           <Link href="/services" className="text-sm font-semibold text-[#c9a227] hover:underline">
             Tous les services →
@@ -131,9 +130,9 @@ export default async function Home() {
 
       <section className="border-y border-white/10 bg-black/40 py-16">
         <div className="mx-auto max-w-6xl px-4">
-          <h2 className="font-[family-name:var(--font-display)] text-4xl text-white">Salon en direct</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-4xl text-white">Le Salon en direct</h2>
           <p className="mt-2 max-w-2xl text-white/60">
-            Les 5 postes : disponibilité, client en cours et temps restant estimé (mise à jour instantanée).
+            Suivez l&apos;activité de vos coiffeurs en temps réel. Consultez la disponibilité immédiate de nos 5 postes et le temps d&apos;attente estimé pour chaque expert.
           </p>
           <div className="mt-8">
             <SalonSeats />

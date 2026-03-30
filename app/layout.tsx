@@ -20,11 +20,11 @@ export const metadata: Metadata = {
   applicationName: "L'Artiste by Ali Chakroun",
   metadataBase: getMetadataBaseUrl(),
   title: {
-    default: "L'Artiste by Ali Chakroun — Coiffeur & Barbier à Kairouan",
+    default: "L'Artiste by Ali Chakroun | Excellence & Haute Coiffure pour Hommes",
     template: "%s | L'Artiste Kairouan",
   },
   description:
-    "Salon de coiffure et barbier pour hommes à Kairouan, Tunisie. Coupes modernes, barbe, forfaits mariage. Réservation en ligne rapide avec suivi en temps réel.",
+    "L'excellence de la coiffure masculine à Kairouan. Découvrez L'Artiste by Ali Chakroun : coupes de précision, rituels de barbe traditionnels et soins premium dans un cadre exclusif.",
   keywords: [
     "coiffeur kairouan",
     "barbier kairouan",
@@ -73,7 +73,7 @@ const localBusinessJsonLd = {
   "@type": "HairSalon",
   name: "L'Artiste by Ali Chakroun",
   description:
-    "Salon de coiffure et barbier pour hommes à Kairouan, Tunisie. Coupes modernes, barbe, forfaits mariage. Réservation en ligne.",
+    "L'excellence de la coiffure masculine à Kairouan. Coupes de précision, rituels de barbe traditionnels et soins premium dans un cadre exclusif.",
   url: "https://ali-chakroun-coif.vercel.app",
   telephone: "+21620392769",
   address: {

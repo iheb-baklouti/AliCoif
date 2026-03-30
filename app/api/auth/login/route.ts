@@ -4,12 +4,32 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { setAuthCookie, signToken } from "@/lib/auth";
 
+const rateLimit = new Map<string, { count: number; lastReset: number }>();
+function checkRateLimit(ip: string) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const limit = 5;
+  const user = rateLimit.get(ip);
+  if (!user || now - user.lastReset > windowMs) {
+    rateLimit.set(ip, { count: 1, lastReset: now });
+    return true;
+  }
+  if (user.count >= limit) return false;
+  user.count += 1;
+  return true;
+}
+
 const schema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
 
 export async function POST(req: Request) {
+  const ip = req.headers.get("x-forwarded-for") || "unknown";
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ error: "Trop de tentatives. Réessayez dans 15min." }, { status: 429 });
+  }
+
   const json = await req.json().catch(() => null);
   const parsed = schema.safeParse(json);
   if (!parsed.success) {

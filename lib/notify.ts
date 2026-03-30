@@ -37,8 +37,8 @@ function buildHtmlTemplate(title: string, contentHtml: string) {
   <div style="max-width: 600px; margin: 40px auto; background-color: #111111; border: 1px solid #333333; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
     <!-- Header -->
     <div style="background-color: #c9a227; padding: 32px 24px; text-align: center;">
-      <h1 style="margin: 0; color: #000000; font-size: 32px; font-weight: 700; letter-spacing: -1px; font-family: Georgia, serif;">L'Artiste</h1>
-      <p style="margin: 8px 0 0 0; color: rgba(0, 0, 0, 0.7); font-size: 13px; text-transform: uppercase; letter-spacing: 3px; font-weight: 600;">Coiffeur & Barbier</p>
+      <h1 style="margin: 0; color: #000000; font-size: 32px; font-weight: 700; letter-spacing: -1px; font-family: Georgia, serif;">L&apos;Artiste</h1>
+      <p style="margin: 8px 0 0 0; color: rgba(0, 0, 0, 0.7); font-size: 13px; text-transform: uppercase; letter-spacing: 3px; font-weight: 600;">Excellence &amp; Tradition</p>
     </div>
     <!-- Body -->
     <div style="padding: 40px 32px; font-size: 16px; line-height: 1.6; color: #e5e5e5;">
@@ -137,14 +137,14 @@ export async function notifyClientReservationPending(opts: {
     "Demande reçue",
     `
     <p>Bonjour <strong>${opts.name}</strong>,</p>
-    <p>Nous avons bien reçu votre demande de réservation.</p>
+    <p>Votre demande de rituel de soin a bien été transmise à notre équipe pour étude.</p>
     <div style="background-color: #1a1a1a; border-left: 4px solid #c9a227; padding: 16px 20px; margin: 24px 0; border-radius: 0 8px 8px 0;">
-      <p style="margin: 0 0 8px 0; color: #c9a227; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Détails (En attente)</p>
+      <p style="margin: 0 0 8px 0; color: #c9a227; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Détails du soin (En attente)</p>
       <p style="margin: 0 0 8px 0; font-size: 18px; color: #ffffff;">${opts.serviceName}</p>
       <p style="margin: 0; color: #aaaaaa;">🗓️ ${opts.when}</p>
     </div>
-    <p>Cette demande est actuellement <strong>en attente de validation</strong> par notre équipe. Vous recevrez un nouvel e-mail très prochainement pour vous confirmer la disponibilité du créneau.</p>
-    <p style="margin-top: 32px; color: #888888;">Merci pour votre confiance,<br>L'équipe L'Artiste</p>
+    <p>Cette demande est actuellement <strong>en attente de validation</strong>. Vous recevrez une confirmation très prochainement dès qu&apos;un expert aura validé votre créneau.</p>
+    <p style="margin-top: 32px; color: #888888;">À l&apos;écoute de votre style,<br>L&apos;équipe L&apos;Artiste</p>
     `
   );
   await sendMailTo(opts.to, `L'Artiste — Demande de réservation reçue`, text, html);
@@ -161,17 +161,17 @@ export async function notifyClientReservationConfirmed(opts: {
     "Réservation confirmée",
     `
     <p>Bonjour <strong>${opts.name}</strong>,</p>
-    <h2 style="color: #4ade80; font-size: 20px; margin-top: 24px;">✅ Votre rendez-vous est confirmé !</h2>
+    <h2 style="color: #4ade80; font-size: 20px; margin-top: 24px;">✅ Votre expérience L&apos;Artiste est confirmée</h2>
     <div style="background-color: #1a1a1a; border: 1px solid #333333; padding: 20px; margin: 24px 0; border-radius: 12px;">
-      <p style="margin: 0 0 12px 0; color: #c9a227; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Vos détails</p>
+      <p style="margin: 0 0 12px 0; color: #c9a227; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Récapitulatif</p>
       <p style="margin: 0 0 8px 0; font-size: 18px; color: #ffffff;">✂️ ${opts.serviceName}</p>
       <p style="margin: 0; font-size: 16px; color: #cccccc;">🗓️ ${opts.when}</p>
     </div>
-    <p>Nous vous attendons avec impatience au salon.</p>
+    <p>Nous nous réjouissons de vous accueillir prochainement au salon.</p>
     <div style="text-align: center; margin-top: 32px;">
-      <a href="${getSiteUrl()}/compte" style="display: inline-block; background-color: #222222; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 30px; font-size: 14px; border: 1px solid #444444;">Voir mon compte</a>
+      <a href="${getSiteUrl()}/compte" style="display: inline-block; background-color: #222222; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 30px; font-size: 14px; border: 1px solid #444444;">Gérer mon rendez-vous</a>
     </div>
-    <p style="margin-top: 32px; color: #888888;">À très bientôt,<br>L'équipe L'Artiste</p>
+    <p style="margin-top: 32px; color: #888888;">À très bientôt,<br>L&apos;équipe L&apos;Artiste</p>
     `
   );
   await sendMailTo(opts.to, `L'Artiste — Réservation confirmée`, text, html);

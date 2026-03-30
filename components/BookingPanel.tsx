@@ -57,16 +57,16 @@ export function BookingPanel({ services }: { services: Service[] }) {
     }
     const j = await r.json().catch(() => ({}));
     if (!r.ok) {
-      setMsg(j.error || "Impossible d’envoyer la demande.");
+      setMsg(j.error || "Une erreur est survenue lors de l'envoi.");
       return;
     }
-    setMsg("Demande envoyée : en attente de validation du salon. Vous serez notifié par e-mail / WhatsApp.");
+    setMsg("Votre demande a été transmise avec succès. Notre équipe validera votre créneau dans les plus brefs délais. Vous recevrez une notification de confirmation par e-mail.");
     router.push("/compte");
   }
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-      <h2 className="text-lg font-semibold text-white">Nouveau rendez-vous</h2>
+      <h2 className="text-lg font-semibold text-white">Réservation de Soin</h2>
       <div className="mt-6 space-y-4">
         <div>
           <label className="text-xs uppercase tracking-wider text-white/50">Service</label>
@@ -127,7 +127,7 @@ export function BookingPanel({ services }: { services: Service[] }) {
           disabled={loading}
           className="w-full rounded-full bg-[#c9a227] py-3 text-sm font-semibold text-black transition hover:bg-[#e4c04a] disabled:opacity-60"
         >
-          {loading ? "Envoi…" : "Confirmer la réservation"}
+          {loading ? "Transmission…" : "Réserver ma Prestation"}
         </button>
         {msg && <p className="text-sm text-white/75">{msg}</p>}
       </div>
